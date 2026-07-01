@@ -164,7 +164,7 @@ claude
           <p className="text-xs text-[var(--muted)] mt-2">
             内网环境下，将 Claude Code 的 marketplace 指向内部服务器即可：
           </p>
-          <CodeBlock>{`claude config set marketplace http://10.0.43.61:7788`}</CodeBlock>
+          <CodeBlock>{`claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git`}</CodeBlock>
         </SubStep>
 
         <SubStep title="自动触发">
