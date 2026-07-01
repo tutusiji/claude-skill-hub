@@ -1,0 +1,9 @@
+{
+  "name": "pdf-tools",
+  "version": "1.0.0",
+  "description": "PDF 文档处理神器 — 直接读取、合并、拆分 PDF，支持 OCR 扫描件识别，无需切换软件。适合文档密集型团队。",
+  "category": "productivity",
+  "keywords": ["pdf", "ocr", "document", "merge", "split", "extract"],
+  "author": { "name": "Platform Team" },
+  "license": "MIT"
+}

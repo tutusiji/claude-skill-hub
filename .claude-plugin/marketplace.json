@@ -1,0 +1,359 @@
+{
+    "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+    "name": "internal-skill-hub",
+    "version": "2.0.0",
+    "owner": {
+        "name": "Platform Team",
+        "email": "platform@company.internal"
+    },
+    "metadata": {
+        "description": "公司内部 Claude Code 技能市场 — 精选、审核、生产就绪的开发技能集合。",
+        "version": "2.0.0",
+        "license": "UNLICENSED"
+    },
+    "plugins": [
+        {
+            "name": "code-review-skill",
+            "description": "自动化代码审查 — 检查代码质量、安全性和最佳实践。审查 PR、审计代码或执行编码规范时使用。",
+            "source": "./plugins/code-review-skill",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "code-review",
+                "quality",
+                "security",
+                "best-practices"
+            ]
+        },
+        {
+            "name": "gstack",
+            "description": "Garry Tan 的 Claude Code 技能套件 — 覆盖 CEO 规划、工程审查、设计评审、QA、安全审计、发布工程的 23 个工具。将 Claude Code 变成虚拟工程团队。",
+            "source": "./plugins/gstack",
+            "version": "1.2.0",
+            "category": "productivity",
+            "keywords": [
+                "gstack",
+                "garry-tan",
+                "engineering",
+                "qa",
+                "review",
+                "security",
+                "planning",
+                "shipping"
+            ]
+        },
+        {
+            "name": "superpowers",
+            "description": "全能开发套件 — 项目规划、代码编写、Code Review 等全流程辅助，帮你系统化梳理需求和任务。TDD、调试、协作模式、规格驱动开发、子代理驱动实现。作者 Jesse Vincent (obra)。",
+            "source": "./plugins/superpowers",
+            "version": "6.1.0",
+            "category": "productivity",
+            "keywords": [
+                "superpowers",
+                "tdd",
+                "debugging",
+                "methodology",
+                "spec-driven",
+                "subagents",
+                "best-practices"
+            ]
+        },
+        {
+            "name": "socraticode",
+            "description": "企业级代码库智能分析 — 混合语义搜索、多语言依赖图、符号级影响分析与调用流追踪。零配置本地运行，减少 61% token 消耗。适合大型代码库。",
+            "source": "./plugins/socraticode",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "codebase-intelligence",
+                "semantic-search",
+                "dependency-graph",
+                "impact-analysis"
+            ]
+        },
+        {
+            "name": "hol-guard",
+            "description": "AI 防病毒层 — 在 Claude Code 执行工具前扫描插件、skills、MCP server 中的恶意行为。内网安装第三方插件时的安全闸门。",
+            "source": "./plugins/hol-guard",
+            "version": "1.0.0",
+            "category": "security",
+            "keywords": [
+                "security",
+                "antivirus",
+                "malware-scan",
+                "plugin-safety",
+                "supply-chain"
+            ]
+        },
+        {
+            "name": "pg-aiguide",
+            "description": "PostgreSQL 开发助手 — 帮助 AI 生成更优 SQL、索引建议、查询优化、性能调优。适合后端团队。",
+            "source": "./plugins/pg-aiguide",
+            "version": "1.0.0",
+            "category": "data",
+            "keywords": [
+                "postgresql",
+                "sql",
+                "database",
+                "index",
+                "query-optimization"
+            ]
+        },
+        {
+            "name": "cc-skills-golang",
+            "description": "Go 语言专项技能集 — Go 编码规范、测试模式、并发最佳实践、错误处理、性能优化。专为 Go 团队打造。",
+            "source": "./plugins/cc-skills-golang",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "golang",
+                "go",
+                "testing",
+                "concurrency",
+                "performance",
+                "best-practices"
+            ]
+        },
+        {
+            "name": "aws-skills",
+            "description": "AWS 开发技能集 — CDK/SST 基础设施即代码、Serverless 部署、成本运维、Bedrock AgentCore。适合 AWS 技术栈团队。",
+            "source": "./plugins/aws-skills",
+            "version": "1.0.0",
+            "category": "devops",
+            "keywords": [
+                "aws",
+                "cdk",
+                "serverless",
+                "cost-optimization",
+                "bedrock",
+                "infrastructure"
+            ]
+        },
+        {
+            "name": "hashicorp-skills",
+            "description": "HashiCorp 产品技能集 — Terraform 基础设施编排、Vault 密钥管理、Consul 服务发现、Nomad 调度。HashiCorp 官方出品。",
+            "source": "./plugins/hashicorp-skills",
+            "version": "1.0.0",
+            "category": "devops",
+            "keywords": [
+                "terraform",
+                "vault",
+                "consul",
+                "nomad",
+                "infrastructure",
+                "hashicorp"
+            ]
+        },
+        {
+            "name": "claude-code-skills",
+            "description": "全交付生命周期工具集 — Agile 流水线、多模型 AI 代码审查、项目脚手架、文档生成、代码审计、性能优化。自带 MCP servers。",
+            "source": "./plugins/claude-code-skills",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "agile",
+                "code-review",
+                "documentation",
+                "audit",
+                "performance",
+                "lifecycle"
+            ]
+        },
+        {
+            "name": "claude-workflow-v2",
+            "description": "通用工作流引擎 — 集成 agents、skills、hooks、commands 一体化。提供任务编排、多步骤自动化、事件驱动工作流。",
+            "source": "./plugins/claude-workflow-v2",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "workflow",
+                "automation",
+                "orchestration",
+                "agents",
+                "hooks",
+                "commands"
+            ]
+        },
+        {
+            "name": "claude-forge",
+            "description": "Claude Code 增强框架 — 11 个 AI 子代理、36 个 slash 命令、15 个技能。覆盖规划、编码、审查、测试、部署全流程。",
+            "source": "./plugins/claude-forge",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "framework",
+                "agents",
+                "commands",
+                "slash-commands",
+                "planning",
+                "deployment"
+            ]
+        },
+        {
+            "name": "awesome-cn-skills",
+            "description": "中文社区精选技能集 — 代码审查、API 设计、前端开发、数据库优化等场景化技能。中文文档，按场景分类，适合国内团队。",
+            "source": "./plugins/awesome-cn-skills",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "chinese",
+                "code-review",
+                "api-design",
+                "frontend",
+                "best-practices",
+                "community"
+            ]
+        },
+        {
+            "name": "pdf-tools",
+            "description": "PDF 文档处理神器 — 直接读取、合并、拆分 PDF，支持 OCR 扫描件识别，无需切换软件。适合文档密集型团队。",
+            "source": "./plugins/pdf-tools",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "pdf",
+                "ocr",
+                "document",
+                "merge",
+                "split",
+                "extract"
+            ]
+        },
+        {
+            "name": "humanizer-zh",
+            "description": "去 AI 味神器 — 将生硬的 AI 表达（如\"综上所述\"）转换为更自然的\"人话\"，让文案更接地气。适合内容审核和文案团队。",
+            "source": "./plugins/humanizer-zh",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "humanizer",
+                "chinese",
+                "writing",
+                "ai-detection",
+                "copywriting",
+                "natural-language"
+            ]
+        },
+        {
+            "name": "planning-with-files",
+            "description": "大项目救星 — 持久化项目规划，跨会话不丢失上下文，适合碎片化时间开发。将需求拆解为可跟踪的文件化任务清单。",
+            "source": "./plugins/planning-with-files",
+            "version": "1.0.0",
+            "category": "productivity",
+            "keywords": [
+                "planning",
+                "persistence",
+                "task-management",
+                "cross-session",
+                "project-management"
+            ]
+        },
+        {
+            "name": "frontend-design",
+            "description": "前端颜值救星 — 让 Claude 写出符合专业设计规范的前端代码，后端开发者也能做出好看的界面。内置色彩搭配、间距系统、响应式布局规范。",
+            "source": "./plugins/frontend-design",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "frontend",
+                "design",
+                "ui",
+                "css",
+                "responsive",
+                "design-system"
+            ]
+        },
+        {
+            "name": "code-review",
+            "description": "代码质量守护神 — 多 Agent 并行审查代码，查找 Bug、安全漏洞并优化规范，减少出错率。比单次审查覆盖面更广、深度更深。",
+            "source": "./plugins/code-review",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "code-review",
+                "multi-agent",
+                "security",
+                "bug-detection",
+                "quality",
+                "parallel"
+            ]
+        },
+        {
+            "name": "skill-creator",
+            "description": "压轴神器 — 让你自定义专属 Skill，将个人开发习惯和重复性工作封装成功能，彻底让 AI 适配你的需求。支持模板化创建、参数配置、自动注册。",
+            "source": "./plugins/skill-creator",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "skill",
+                "creator",
+                "custom",
+                "template",
+                "automation",
+                "personalization"
+            ]
+        },
+        {
+            "name": "git-commit-pro",
+            "description": "Git 提交规范助手 — 自动生成符合 Conventional Commits 规范的中文提交信息，分析代码变更智能生成提交描述，支持多类型提交和范围标记。提交代码前使用。",
+            "source": "./plugins/git-commit-pro",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "git",
+                "commit",
+                "conventional-commits",
+                "changelog",
+                "version-control",
+                "chinese"
+            ]
+        },
+        {
+            "name": "cn-docstring",
+            "description": "中文注释生成器 — 为函数、类、模块自动生成规范的中文文档注释。支持 Python docstring、JSDoc、Go doc、Java Javadoc 等多语言格式。写完代码后补充注释时使用。",
+            "source": "./plugins/cn-docstring",
+            "version": "1.0.0",
+            "category": "developer-tools",
+            "keywords": [
+                "docstring",
+                "comment",
+                "chinese",
+                "documentation",
+                "javadoc",
+                "jsdoc",
+                "godoc"
+            ]
+        },
+        {
+            "name": "docker-pro",
+            "description": "Docker 全流程助手 — Dockerfile 编写规范、镜像优化、Compose 编排、容器调试。编写 Dockerfile、优化镜像大小或编排多容器服务时使用。",
+            "source": "./plugins/docker-pro",
+            "version": "1.0.0",
+            "category": "devops",
+            "keywords": [
+                "docker",
+                "dockerfile",
+                "compose",
+                "container",
+                "image-optimization",
+                "devops"
+            ]
+        },
+        {
+            "name": "security-audit",
+            "description": "代码安全深度审计 — OWASP Top 10 漏洞扫描、依赖 CVE 检测、硬编码密钥排查、合规性检查。上线前安全评估或定期安全巡检时使用。",
+            "source": "./plugins/security-audit",
+            "version": "1.0.0",
+            "category": "security",
+            "keywords": [
+                "security",
+                "audit",
+                "owasp",
+                "cve",
+                "secrets",
+                "compliance",
+                "vulnerability"
+            ]
+        }
+    ]
+}

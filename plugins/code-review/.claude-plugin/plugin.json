@@ -1,0 +1,9 @@
+{
+  "name": "code-review",
+  "version": "1.0.0",
+  "description": "代码质量守护神 — 多 Agent 并行审查代码，查找 Bug、安全漏洞并优化规范，减少出错率。比单次审查覆盖面更广、深度更深。",
+  "category": "developer-tools",
+  "keywords": ["code-review", "multi-agent", "security", "bug-detection", "quality", "parallel"],
+  "author": { "name": "Platform Team" },
+  "license": "MIT"
+}

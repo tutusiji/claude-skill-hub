@@ -1,0 +1,10 @@
+{
+  "name": "hol-guard",
+  "version": "1.0.0",
+  "description": "AI 防病毒层 — 在 Claude Code 执行工具前扫描插件、skills、MCP server 中的恶意行为。内网安装第三方插件时的安全闸门，保护 Agent 免受供应链攻击。",
+  "category": "security",
+  "keywords": ["security", "antivirus", "malware-scan", "plugin-safety", "supply-chain"],
+  "author": { "name": "Hashgraph Online" },
+  "homepage": "https://github.com/hashgraph-online/hol-guard",
+  "license": "Other"
+}

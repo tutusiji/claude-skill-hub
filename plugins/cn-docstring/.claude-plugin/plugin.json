@@ -1,0 +1,9 @@
+{
+  "name": "cn-docstring",
+  "version": "1.0.0",
+  "description": "中文注释生成器 — 为函数、类、模块自动生成规范的中文文档注释。支持 Python docstring、JSDoc、Go doc、Java Javadoc 等多语言格式。写完代码后补充注释时使用。",
+  "category": "developer-tools",
+  "keywords": ["docstring", "comment", "chinese", "documentation", "javadoc", "jsdoc", "godoc"],
+  "author": { "name": "Platform Team" },
+  "license": "MIT"
+}

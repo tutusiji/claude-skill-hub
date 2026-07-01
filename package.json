@@ -1,0 +1,13 @@
+{
+  "name": "claude-skill-hub",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validate-plugin.mjs",
+    "generate-registry": "node scripts/generate-registry.mjs",
+    "dev": "cd web && npm run dev",
+    "build": "cd web && npm run build",
+    "start": "cd web && npm run start"
+  }
+}

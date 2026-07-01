@@ -1,0 +1,23 @@
+{
+  "name": "gstack",
+  "version": "1.2.0",
+  "description": "Garry Tan 的 Claude Code 技能套件 — 覆盖 CEO 规划、工程审查、设计评审、QA、安全审计、发布工程的 23 个工具。将 Claude Code 变成虚拟工程团队。",
+  "category": "productivity",
+  "keywords": [
+    "gstack",
+    "garry-tan",
+    "engineering",
+    "qa",
+    "review",
+    "security",
+    "planning",
+    "shipping"
+  ],
+  "author": {
+    "name": "Garry Tan",
+    "email": "garry@ycombinator.com"
+  },
+  "homepage": "https://github.com/garrytan/gstack",
+  "repository": "https://github.com/garrytan/gstack",
+  "license": "MIT"
+}

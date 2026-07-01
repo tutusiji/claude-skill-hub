@@ -1,0 +1,45 @@
+name: Deploy Web UI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.claude-plugin/marketplace.json'
+      - 'plugins/**'
+      - 'web/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate registry
+        run: node scripts/generate-registry.mjs
+
+      - name: Install web deps
+        working-directory: web
+        run: npm ci
+
+      - name: Build
+        working-directory: web
+        run: npm run build
+
+      # Deploy to your internal hosting — examples:
+      # - Docker image to internal registry
+      # - rsync to internal server
+      # - Upload static export to S3 / OSS
+      - name: Build Docker image
+        run: |
+          docker build -f web/Dockerfile -t internal-skill-hub:${{ github.sha }} .
+
+      - name: Deploy
+        run: |
+          echo "TODO: push to internal registry and deploy"
+          # docker tag internal-skill-hub:${{ github.sha }} <registry>/internal-skill-hub:latest
+          # docker push <registry>/internal-skill-hub:latest
+          # ssh deploy@server "docker pull <registry>/internal-skill-hub:latest && docker-compose up -d"

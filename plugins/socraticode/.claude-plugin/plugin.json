@@ -1,0 +1,10 @@
+{
+  "name": "socraticode",
+  "version": "1.0.0",
+  "description": "企业级代码库智能分析 — 混合语义搜索、多语言依赖图、符号级影响分析与调用流追踪。零配置本地运行，号称减少 61% token 消耗、84% 调用次数。适合大型代码库。",
+  "category": "developer-tools",
+  "keywords": ["codebase-intelligence", "semantic-search", "dependency-graph", "impact-analysis", "code-navigation"],
+  "author": { "name": "Giancarlo Erra" },
+  "homepage": "https://github.com/giancarloerra/SocratiCode",
+  "license": "AGPL-3.0"
+}

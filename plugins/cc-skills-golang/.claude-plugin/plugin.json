@@ -1,0 +1,10 @@
+{
+  "name": "cc-skills-golang",
+  "version": "1.0.0",
+  "description": "Go 语言专项技能集 — Go 编码规范、测试模式、并发最佳实践、错误处理、性能优化。专为 Go 团队打造。",
+  "category": "developer-tools",
+  "keywords": ["golang", "go", "testing", "concurrency", "performance", "best-practices"],
+  "author": { "name": "samber" },
+  "homepage": "https://github.com/samber/cc-skills-golang",
+  "license": "MIT"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "aws-skills",
+  "version": "1.0.0",
+  "description": "AWS 开发技能集 — CDK/SST 基础设施即代码、Serverless 部署、成本运维、Bedrock AgentCore。适合 AWS 技术栈团队。",
+  "category": "devops",
+  "keywords": ["aws", "cdk", "serverless", "cost-optimization", "bedrock", "infrastructure"],
+  "author": { "name": "zxkane" },
+  "homepage": "https://github.com/zxkane/aws-skills",
+  "license": "MIT"
+}

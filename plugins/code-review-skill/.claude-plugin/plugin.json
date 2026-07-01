@@ -1,0 +1,12 @@
+{
+  "name": "code-review-skill",
+  "version": "1.0.0",
+  "description": "自动化代码审查 — 检查安全性、代码质量和最佳实践。审查 PR、审计代码或执行编码规范时使用。",
+  "category": "developer-tools",
+  "keywords": [
+    "code-review",
+    "quality",
+    "security",
+    "best-practices"
+  ]
+}

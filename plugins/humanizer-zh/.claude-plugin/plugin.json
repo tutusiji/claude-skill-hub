@@ -1,0 +1,18 @@
+{
+  "name": "humanizer-zh",
+  "version": "1.0.0",
+  "description": "去 AI 味神器 — 将生硬的 AI 表达（如「综上所述」「值得注意的是」）转换为更自然的「人话」，让文案更接地气。适合内容审核和文案团队。",
+  "category": "productivity",
+  "keywords": [
+    "humanizer",
+    "chinese",
+    "writing",
+    "ai-detection",
+    "copywriting",
+    "natural-language"
+  ],
+  "author": {
+    "name": "Platform Team"
+  },
+  "license": "MIT"
+}

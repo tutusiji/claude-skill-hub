@@ -1,0 +1,10 @@
+{
+  "name": "claude-code-skills",
+  "version": "1.0.0",
+  "description": "全交付生命周期工具集 — Agile 流水线、多模型 AI 代码审查、项目脚手架、文档生成、代码审计、性能优化。自带 MCP servers。",
+  "category": "productivity",
+  "keywords": ["agile", "code-review", "documentation", "audit", "performance", "lifecycle"],
+  "author": { "name": "levnikolaevich" },
+  "homepage": "https://github.com/levnikolaevich/claude-code-skills",
+  "license": "MIT"
+}

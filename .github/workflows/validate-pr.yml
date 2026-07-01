@@ -1,0 +1,48 @@
+name: Validate PR
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'plugins/**'
+      - '.claude-plugin/marketplace.json'
+      - 'scripts/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate plugins and marketplace
+        run: node scripts/validate-plugin.mjs
+
+      - name: Generate registry
+        run: node scripts/generate-registry.mjs
+
+      - name: Check marketplace.json has new plugin registered
+        run: |
+          CHANGED_PLUGINS=$(git diff --name-only origin/main...HEAD -- 'plugins/' | sed 's|plugins/||' | cut -d/ -f1 | sort -u)
+          for plugin in $CHANGED_PLUGINS; do
+            if ! node -e "
+              const mp = require('./.claude-plugin/marketplace.json');
+              if (!mp.plugins.find(p => p.name === '$plugin')) {
+                console.error('Plugin $plugin is not registered in marketplace.json');
+                process.exit(1);
+              }
+            "; then
+              echo "::error::Plugin '$plugin' exists on disk but is not registered in .claude-plugin/marketplace.json"
+              exit 1
+            fi
+          done
+
+      - name: Check for secrets
+        run: |
+          if grep -rE "(sk-[A-Za-z0-9]{20,}|AKIA[A-Z0-9]{16}|ghp_[A-Za-z0-9]{36}|-----BEGIN.*PRIVATE KEY-----)" plugins/; then
+            echo "::error::Potential secrets detected in plugin files"
+            exit 1
+          fi
