@@ -26,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-brand-500">Skill</span>Hub
             </Link>
             <nav className="flex items-center gap-6 text-sm text-[var(--muted)]">
+              <Link href="/guide" className="hover:text-[var(--foreground)] transition-colors">使用指南</Link>
               <Link href="/" className="hover:text-[var(--foreground)] transition-colors">浏览插件</Link>
               <Link href="/contribute" className="hover:text-[var(--foreground)] transition-colors">贡献指南</Link>
               <ThemeToggle />
