@@ -1,0 +1,26 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: skill-hub-web
+    ports:
+      - "7788:3000"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+
+  git-server:
+    build:
+      context: ./git-server
+      dockerfile: Dockerfile
+    container_name: skill-hub-git
+    ports:
+      - "7789:7789"
+    volumes:
+      # bare 仓库持久化，重建容器不丢数据
+      - git-data:/srv/git
+    restart: unless-stopped
+
+volumes:
+  git-data:
