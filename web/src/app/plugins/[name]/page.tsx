@@ -33,9 +33,8 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
 
   // 根据类型生成不同的安装命令
   const isSkillPack = plugin.type === 'skills';
-  const installCmd = isSkillPack
-    ? `# 1. 下载 ZIP 包并解压\nunzip ${plugin.name}.zip -d /tmp/${plugin.name}\n# 2. 将 skills 复制到 Claude Code 目录\ncp -r /tmp/${plugin.name}/skills/* ~/.claude/skills/`
-    : `# 1. 下载 ZIP 包并解压\nunzip ${plugin.name}.zip -d ~/.claude/plugins/\n# 2. 重启 Claude Code 即可使用`;
+  const installCmd = `claude plugin install ${plugin.name}@skill-hub`;
+  const marketplaceCmd = `claude plugin marketplace add https://joox.cc:7504/git/skill-hub.git`;
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 
   // Get download count
@@ -119,6 +118,9 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
               <code className="text-sm text-brand-500 flex-1">{installCmd}</code>
               <CopyButtonWithTracking text={installCmd} pluginName={plugin.name} />
             </div>
+            <p className="text-xs text-[var(--muted)] mt-1.5">
+              首次使用需先添加 marketplace: <code className="text-brand-500">{marketplaceCmd}</code>
+            </p>
 
             {/* External Links */}
             {(plugin.homepage || plugin.repository) && (

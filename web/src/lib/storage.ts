@@ -153,6 +153,12 @@ export function deleteSubmission(id: string): { success: boolean; error?: string
     if (existsSync(pluginDir)) {
       try { execSync(`rm -rf "${pluginDir}"`); } catch { /* ignore */ }
     }
+    // Sync to Git marketplace repo
+    try {
+      execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
+    } catch (e) {
+      console.error('marketplace sync failed:', e);
+    }
   }
 
   return { success: true };
@@ -272,6 +278,13 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
     // Update submission status
     updateSubmissionStatus(id, 'published');
 
+    // Sync to Git marketplace repo (for claude plugin marketplace add)
+    try {
+      execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
+    } catch (e) {
+      console.error('marketplace sync failed:', e);
+    }
+
     return { success: true, plugin };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : String(e) };
@@ -339,5 +352,13 @@ export function editPublishedPlugin(
   if (updates.category !== undefined) plugin.category = updates.category;
 
   writeJSON(PUBLISHED_PLUGINS_FILE, published);
+
+  // Sync to Git marketplace repo
+  try {
+    execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
+  } catch (e) {
+    console.error('marketplace sync failed:', e);
+  }
+
   return { success: true };
 }
