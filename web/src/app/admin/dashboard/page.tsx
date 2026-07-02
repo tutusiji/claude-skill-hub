@@ -7,10 +7,10 @@ import {
   Wrench, LogOut, Download, CheckCircle, XCircle, Clock,
   Package, TrendingUp, Activity, EyeOff, Eye, ArrowLeft, RefreshCw,
   ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ChevronDown, ChevronUp,
-  Trash2, Rocket,
+  Trash2, Rocket, Pencil, X,
 } from 'lucide-react';
 import type { Plugin } from '@/lib/types';
-import { CATEGORY_LABELS } from '@/lib/types';
+import { CATEGORIES, CATEGORY_LABELS } from '@/lib/types';
 import registry from '@/lib/registry.json';
 import { ErrorBoundary } from '@/components/error-boundary';
 
@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('submissions');
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [publishedPlugins, setPublishedPlugins] = useState<Plugin[]>([]);
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -62,9 +63,10 @@ export default function AdminDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [subRes, statsRes] = await Promise.all([
+      const [subRes, statsRes, pubRes] = await Promise.all([
         fetch('/api/admin/submissions'),
         fetch('/api/stats'),
+        fetch('/api/published-plugins'),
       ]);
 
       if (subRes.status === 401) {
@@ -74,8 +76,10 @@ export default function AdminDashboard() {
 
       const subData = await subRes.json();
       const statsJson = await statsRes.ok ? await statsRes.json() : null;
+      const pubJson = await pubRes.ok ? await pubRes.json() : { plugins: [] };
       setSubmissions(subData.submissions || []);
       setStatsData(statsJson);
+      setPublishedPlugins(pubJson.plugins || []);
     } catch {
       // ignore
     } finally {
@@ -161,6 +165,41 @@ export default function AdminDashboard() {
       await fetchData();
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  // ─── 编辑已上架插件 ──────────────────────────────────────
+  const [editTarget, setEditTarget] = useState<Plugin | null>(null);
+  const [editForm, setEditForm] = useState({ description: '', category: '' });
+  const [editSaving, setEditSaving] = useState(false);
+
+  const handleEditClick = (plugin: Plugin) => {
+    setEditTarget(plugin);
+    setEditForm({ description: plugin.description, category: plugin.category });
+  };
+
+  const handleEditSave = async () => {
+    if (!editTarget) return;
+    setEditSaving(true);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/admin/published-plugins/${editTarget.name}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMessage({ type: 'success', text: `插件「${editTarget.name}」已更新` });
+        setEditTarget(null);
+        await fetchData();
+      } else {
+        setActionMessage({ type: 'error', text: data.error || '更新失败' });
+      }
+    } catch {
+      setActionMessage({ type: 'error', text: '网络错误' });
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -294,7 +333,9 @@ export default function AdminDashboard() {
             ) : tab === 'plugins' ? (
               <PluginsTab
                 statsData={statsData}
+                publishedPlugins={publishedPlugins}
                 onTogglePublish={handleTogglePublish}
+                onEdit={handleEditClick}
                 actionLoading={actionLoading}
               />
             ) : (
@@ -303,6 +344,64 @@ export default function AdminDashboard() {
           </ErrorBoundary>
         )}
       </div>
+
+      {/* ─── 编辑弹窗 ─── */}
+      {editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setEditTarget(null)}>
+          <div className="bg-[var(--card)] border border-[var(--border)] rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Pencil className="w-4 h-4 text-brand-500" />
+                编辑插件: {editTarget.name}
+              </h3>
+              <button onClick={() => setEditTarget(null)} className="text-[var(--muted)] hover:text-[var(--foreground)]">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-[var(--muted)] mb-1.5 block">描述</label>
+                <textarea
+                  value={editForm.description}
+                  onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="form-input w-full resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-[var(--muted)] mb-1.5 block">分类</label>
+                <select
+                  value={editForm.category}
+                  onChange={e => setEditForm(prev => ({ ...prev, category: e.target.value }))}
+                  className="form-input w-full"
+                >
+                  {CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{CATEGORY_LABELS[cat] || cat}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-6">
+              <button
+                onClick={handleEditSave}
+                disabled={editSaving}
+                className="inline-flex items-center gap-1 px-4 py-2 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
+                保存
+              </button>
+              <button
+                onClick={() => setEditTarget(null)}
+                className="inline-flex items-center gap-1 px-4 py-2 text-xs font-medium bg-[var(--background)] border border-[var(--border)] rounded-lg transition-colors"
+              >
+                取消
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -541,18 +640,26 @@ function SubmissionsTab({
 
 // ─── Plugins Tab ───────────────────────────────────────────
 function PluginsTab({
-  statsData, onTogglePublish, actionLoading,
+  statsData, publishedPlugins, onTogglePublish, onEdit, actionLoading,
 }: {
   statsData: StatsData | null;
+  publishedPlugins: Plugin[];
   onTogglePublish: (name: string, published: boolean) => void;
+  onEdit: (plugin: Plugin) => void;
   actionLoading: string | null;
 }) {
   const statusMap = statsData?.statusMap || {};
   const stats = statsData?.stats || {};
 
+  // 合并静态插件和已发布插件（去重）
+  const staticNames = new Set(plugins.map(p => p.name));
+  const dynamicPlugins = publishedPlugins.filter(p => !staticNames.has(p.name));
+  const allPlugins = [...plugins, ...dynamicPlugins];
+
   return (
     <div className="space-y-2">
-      {plugins.map((plugin) => {
+      {allPlugins.map((plugin) => {
+        const isStatic = staticNames.has(plugin.name);
         const published = statusMap[plugin.name] !== false;
         const downloads = stats[plugin.name] || 0;
         return (
@@ -561,7 +668,14 @@ function PluginsTab({
               <div className="flex items-center gap-2 mb-0.5">
                 <h3 className="font-semibold text-sm">{plugin.name}</h3>
                 <span className="text-xs text-[var(--muted)] font-mono">v{plugin.version}</span>
+                {plugin.type === 'skills' && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500">纯技能</span>
+                )}
+                {!isStatic && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-brand-500/10 text-brand-500">动态上架</span>
+                )}
               </div>
+              <p className="text-xs text-[var(--muted)] mb-0.5 line-clamp-1">{plugin.description}</p>
               <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
                 <span>{CATEGORY_LABELS[plugin.category] || plugin.category}</span>
                 <span>{(plugin.skills?.length || 0)} 技能</span>
@@ -569,20 +683,32 @@ function PluginsTab({
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              {/* 编辑按钮：仅对已发布（非静态）插件显示 */}
+              {!isStatic && (
+                <button
+                  onClick={() => onEdit(plugin)}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-brand-500/10 text-brand-500 hover:bg-brand-500/20 rounded-lg transition-colors"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  编辑
+                </button>
+              )}
               <span className={`text-xs px-2 py-0.5 rounded-full ${published ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--background)] text-[var(--muted)]'}`}>
                 {published ? '已上架' : '已下架'}
               </span>
-              <button
-                onClick={() => onTogglePublish(plugin.name, published)}
-                disabled={actionLoading === `plugin_${plugin.name}`}
-                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
-                  published
-                    ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                    : 'bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20'
-                }`}
-              >
-                {published ? <><EyeOff className="w-3.5 h-3.5" />下架</> : <><Eye className="w-3.5 h-3.5" />上架</>}
-              </button>
+              {isStatic && (
+                <button
+                  onClick={() => onTogglePublish(plugin.name, published)}
+                  disabled={actionLoading === `plugin_${plugin.name}`}
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 ${
+                    published
+                      ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                      : 'bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20'
+                  }`}
+                >
+                  {published ? <><EyeOff className="w-3.5 h-3.5" />下架</> : <><Eye className="w-3.5 h-3.5" />上架</>}
+                </button>
+              )}
             </div>
           </div>
         );

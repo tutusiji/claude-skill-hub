@@ -4,8 +4,9 @@ import { useState, useRef } from 'react';
 import {
   GitPullRequest, FileCode, CheckCircle, AlertTriangle, Terminal,
   Upload, User, Mail, Building2, Hash, FileText, Loader2, Check, X,
-  ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, XCircle,
+  ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, XCircle, Tag,
 } from 'lucide-react';
+import { CATEGORIES, CATEGORY_LABELS } from '@/lib/types';
 
 interface ValidationResult {
   passed: boolean;
@@ -24,7 +25,7 @@ interface ValidationResult {
 
 export default function ContributePage() {
   const [form, setForm] = useState({
-    name: '', employeeId: '', email: '', department: '', description: '',
+    name: '', employeeId: '', email: '', department: '', description: '', category: '',
   });
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -89,7 +90,7 @@ export default function ContributePage() {
     setResult(null);
 
     if (!form.name.trim() || !form.employeeId.trim() || !form.email.trim() ||
-        !form.department.trim() || !form.description.trim() || !file) {
+        !form.department.trim() || !form.description.trim() || !form.category.trim() || !file) {
       setResult({ success: false, message: '所有字段均为必填项，请完整填写。' });
       return;
     }
@@ -102,6 +103,7 @@ export default function ContributePage() {
       formData.append('email', form.email);
       formData.append('department', form.department);
       formData.append('description', form.description);
+      formData.append('category', form.category);
       formData.append('file', file);
 
       const res = await fetch('/api/contribute', {
@@ -112,7 +114,7 @@ export default function ContributePage() {
 
       if (res.ok) {
         setResult({ success: true, message: data.message || '提交成功！' });
-        setForm({ name: '', employeeId: '', email: '', department: '', description: '' });
+        setForm({ name: '', employeeId: '', email: '', department: '', description: '', category: '' });
         setFile(null);
         setValidationResult(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -283,6 +285,21 @@ tar -czf my-plugin.tar.gz my-plugin/
               className="form-input min-h-[80px] resize-y"
               placeholder="简要描述插件功能、适用场景和技术栈..."
             />
+          </FormField>
+
+          <FormField label="插件分类" icon={Tag} required>
+            <select
+              value={form.category}
+              onChange={(e) => handleChange('category', e.target.value)}
+              className="form-input"
+            >
+              <option value="">请选择分类</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {CATEGORY_LABELS[cat] || cat}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           <FormField label="上传插件包" icon={Upload} required>

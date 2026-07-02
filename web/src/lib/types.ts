@@ -15,6 +15,7 @@ export interface Plugin {
   source: string;
   version: string;
   category: string;
+  type?: 'plugin' | 'skills'; // plugin = 有 .claude-plugin/plugin.json, skills = 纯 skill 集合
   keywords?: string[];
   author?: { name: string; email?: string };
   skills?: PluginSkill[];

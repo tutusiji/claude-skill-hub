@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
     const email = formData.get('email') as string;
     const department = formData.get('department') as string;
     const description = formData.get('description') as string;
+    const category = formData.get('category') as string;
     const file = formData.get('file') as File;
 
     // Validate required fields
@@ -23,6 +24,7 @@ export async function POST(request: NextRequest) {
     if (!email?.trim()) missing.push('邮箱');
     if (!department?.trim()) missing.push('部门');
     if (!description?.trim()) missing.push('文件描述');
+    if (!category?.trim()) missing.push('插件分类');
     if (!file || file.size === 0) missing.push('上传文件');
 
     if (missing.length > 0) {
@@ -51,6 +53,7 @@ export async function POST(request: NextRequest) {
       email: email.trim(),
       department: department.trim(),
       description: description.trim(),
+      category: category.trim(),
       filename: file.name,
       filepath: savedFilename,
       status: 'pending',

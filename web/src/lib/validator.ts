@@ -134,7 +134,7 @@ function extractArchive(filepath: string, destDir: string): void {
 
 // 查找插件根目录：优先找 .claude-plugin/plugin.json，回退找 skills/ 目录（纯 skill 包）
 // 递归搜索，支持 ZIP 内任意深度的嵌套目录（如 skills-main/skills-main/...）
-export type PluginRoot = { path: string; type: 'plugin' | 'skills-only' };
+export type PluginRoot = { path: string; type: 'plugin' | 'skills' };
 
 function hasSkillsDir(dir: string): boolean {
   const skillsDir = join(dir, 'skills');
@@ -154,7 +154,7 @@ export function findPluginRoot(dir: string): PluginRoot | null {
   }
   // 回退：检查当前目录是否有 skills/ + SKILL.md（纯 skill 包）
   if (hasSkillsDir(dir)) {
-    return { path: dir, type: 'skills-only' };
+    return { path: dir, type: 'skills' };
   }
   // 递归检查所有子目录
   for (const entry of readdirSync(dir)) {
@@ -172,7 +172,7 @@ export function findPluginRoot(dir: string): PluginRoot | null {
 
 // ─── 主验证函数 ────────────────────────────────────────────
 
-export function validatePluginDir(pluginPath: string, rootType: 'plugin' | 'skills-only' = 'plugin'): ValidationResult {
+export function validatePluginDir(pluginPath: string, rootType: 'plugin' | 'skills' = 'plugin'): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const summary: ValidationResult['summary'] = {
@@ -183,7 +183,7 @@ export function validatePluginDir(pluginPath: string, rootType: 'plugin' | 'skil
 
   let manifest: Record<string, unknown>;
 
-  if (rootType === 'skills-only') {
+  if (rootType === 'skills') {
     // 纯 skill 包：没有 plugin.json，从目录名自动生成元数据
     const dirName = basename(pluginPath);
     // 剥离常见后缀：-main, -master, -6.1.0 等版本号

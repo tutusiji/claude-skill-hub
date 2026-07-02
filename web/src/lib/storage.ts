@@ -50,6 +50,7 @@ export interface Submission {
   email: string;
   department: string;
   description: string;
+  category?: string; // 用户上传时选择的分类（平台元数据，非插件规范字段）
   filename: string;
   filepath: string;
   status: 'pending' | 'approved' | 'rejected' | 'published';
@@ -251,7 +252,8 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
       description: m.description || '',
       source: `./plugins/${m.name}`,
       version: m.version || '1.0.0',
-      category: m.category || 'developer-tools',
+      category: sub.category || m.category || 'developer-tools', // 优先使用用户上传时选择的分类
+      type: pluginRoot.type, // 'plugin' 或 'skills'
       keywords: m.keywords || [],
       author: m.author,
       skills: skills.length > 0 ? skills : undefined,
@@ -322,4 +324,20 @@ export function getDownloadLog(): DownloadLogEntry[] {
 export function getRecentDownloads(limit = 20): DownloadLogEntry[] {
   const log = getDownloadLog();
   return log.slice(-limit).reverse();
+}
+
+// ─── Edit Published Plugin ─────────────────────────────────
+export function editPublishedPlugin(
+  pluginName: string,
+  updates: { description?: string; category?: string }
+): { success: boolean; error?: string } {
+  const published = getPublishedPlugins();
+  const plugin = published.find((p) => p.name === pluginName);
+  if (!plugin) return { success: false, error: '未找到已上架插件' };
+
+  if (updates.description !== undefined) plugin.description = updates.description;
+  if (updates.category !== undefined) plugin.category = updates.category;
+
+  writeJSON(PUBLISHED_PLUGINS_FILE, published);
+  return { success: true };
 }

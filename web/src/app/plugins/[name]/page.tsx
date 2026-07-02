@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles, Flame } from 'lucide-react';
+import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles, Flame, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import { PluginSidebar } from '@/components/plugin-sidebar';
@@ -31,7 +31,11 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
 
   if (!plugin) notFound();
 
-  const installCmd = `/plugin install ${plugin.name}@internal-skill-hub`;
+  // 根据类型生成不同的安装命令
+  const isSkillPack = plugin.type === 'skills';
+  const installCmd = isSkillPack
+    ? `# 1. 下载 ZIP 包并解压\nunzip ${plugin.name}.zip -d /tmp/${plugin.name}\n# 2. 将 skills 复制到 Claude Code 目录\ncp -r /tmp/${plugin.name}/skills/* ~/.claude/skills/`
+    : `# 1. 下载 ZIP 包并解压\nunzip ${plugin.name}.zip -d ~/.claude/plugins/\n# 2. 重启 Claude Code 即可使用`;
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 
   // Get download count
@@ -62,6 +66,12 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <h1 className="text-xl font-bold">{plugin.name}</h1>
+                  {plugin.type === 'skills' && (
+                    <span className="inline-flex items-center gap-1 text-xs text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full">
+                      <Layers className="w-3 h-3" />
+                      纯技能包
+                    </span>
+                  )}
                   {plugin.featured && (
                     <span className="inline-flex items-center gap-1 text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
                       <Sparkles className="w-3 h-3" />

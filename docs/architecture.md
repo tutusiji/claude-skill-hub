@@ -279,14 +279,40 @@ layout.tsx (全局布局: header + footer + 主题切换)
   │     → POST /api/.../download  │
   │     → 下载计数 +1             │
   │                               │
-  │  4. Claude Code CLI 安装      │
-  │     /plugin marketplace add   │
-  │     /plugin install <name>    │
+  │  4. 下载 ZIP 包安装            │
+  │     插件包: ~/.claude/plugins/ │
+  │     纯技能: ~/.claude/skills/  │
 ```
 
 ---
 
-## 5. 安全设计
+## 5. 安装方式
+
+### 插件包（有 `.claude-plugin/plugin.json`）
+
+```bash
+# 1. 从平台下载 ZIP 包
+# 2. 解压到 Claude Code 插件目录
+unzip <plugin-name>.zip -d ~/.claude/plugins/
+# 3. 重启 Claude Code 即可使用
+```
+
+### 纯技能包（仅 `skills/` 目录，如 Anthropic 官方 skills-main）
+
+```bash
+# 1. 从平台下载 ZIP 包
+# 2. 解压后将 skills 目录内容复制到 Claude Code 技能目录
+unzip <skill-pack>.zip -d /tmp/<skill-pack>
+cp -r /tmp/<skill-pack>/skills/* ~/.claude/skills/
+# 3. 重启 Claude Code 即可使用
+```
+
+> **注意**：旧版基于 Git marketplace 的安装方式 (`claude plugin marketplace add <git-url>`) 已废弃。
+> 当前平台采用文件上传 + 审核上架模式，通过下载 ZIP 包进行安装。
+
+---
+
+## 6. 安全设计
 
 ### 5.1 密钥防护
 
