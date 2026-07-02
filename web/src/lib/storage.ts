@@ -13,10 +13,27 @@ function resolveDir(envVar: string | undefined, fallback: string): string {
 export const DATA_DIR = resolveDir(process.env.DATA_DIR, 'data');
 export const UPLOAD_DIR = resolveDir(process.env.UPLOAD_DIR, 'uploads');
 export const PUBLISHED_PLUGINS_DIR = join(DATA_DIR, 'plugins');
+export const STATIC_PLUGINS_DIR = resolveDir(process.env.STATIC_PLUGINS_DIR, 'plugins');
 
 mkdirSync(DATA_DIR, { recursive: true });
 mkdirSync(UPLOAD_DIR, { recursive: true });
 mkdirSync(PUBLISHED_PLUGINS_DIR, { recursive: true });
+
+// ─── Plugin Directory Resolver ─────────────────────────────
+// 查找插件目录：先查已发布插件目录，再查静态插件目录
+export function getPluginDir(pluginName: string): string | null {
+  // 1. Published plugins (动态上架)
+  const publishedPath = join(PUBLISHED_PLUGINS_DIR, pluginName);
+  if (existsSync(publishedPath) && statSync(publishedPath).isDirectory()) {
+    return publishedPath;
+  }
+  // 2. Static plugins (随仓库分发)
+  const staticPath = join(STATIC_PLUGINS_DIR, pluginName);
+  if (existsSync(staticPath) && statSync(staticPath).isDirectory()) {
+    return staticPath;
+  }
+  return null;
+}
 
 // ─── File Paths ────────────────────────────────────────────
 const SUBMISSIONS_FILE = join(DATA_DIR, 'submissions.json');
