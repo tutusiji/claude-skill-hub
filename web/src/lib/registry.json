@@ -36,6 +36,7 @@
       "planning",
       "shipping"
     ],
+    "featured": true,
     "author": {
       "name": "Garry Tan",
       "email": "garry@ycombinator.com"
@@ -92,6 +93,7 @@
       "subagents",
       "best-practices"
     ],
+    "featured": true,
     "author": {
       "name": "Jesse Vincent",
       "email": "jesse@fsck.com"
@@ -557,6 +559,7 @@
       "quality",
       "parallel"
     ],
+    "featured": true,
     "author": {
       "name": "Platform Team"
     },
@@ -584,6 +587,7 @@
       "automation",
       "personalization"
     ],
+    "featured": true,
     "author": {
       "name": "Platform Team"
     },
@@ -666,6 +670,7 @@
       "image-optimization",
       "devops"
     ],
+    "featured": true,
     "author": {
       "name": "Platform Team"
     },
@@ -704,6 +709,7 @@
       "compliance",
       "vulnerability"
     ],
+    "featured": true,
     "author": {
       "name": "Platform Team"
     },

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { CATEGORY_LABELS } from '@/lib/types';
 
 interface CategoryFilterProps {
   categories: string[];
@@ -34,7 +35,7 @@ export function CategoryFilter({ categories, selected, onSelect, counts }: Categ
               : 'bg-[var(--card)] text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--border)]'
           )}
         >
-          {cat} ({counts[cat] || 0})
+          {CATEGORY_LABELS[cat] || cat} ({counts[cat] || 0})
         </button>
       ))}
     </div>

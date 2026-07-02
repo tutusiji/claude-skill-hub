@@ -40,7 +40,8 @@
                 "security",
                 "planning",
                 "shipping"
-            ]
+            ],
+            "featured": true
         },
         {
             "name": "superpowers",
@@ -56,7 +57,8 @@
                 "spec-driven",
                 "subagents",
                 "best-practices"
-            ]
+            ],
+            "featured": true
         },
         {
             "name": "socraticode",
@@ -276,7 +278,8 @@
                 "bug-detection",
                 "quality",
                 "parallel"
-            ]
+            ],
+            "featured": true
         },
         {
             "name": "skill-creator",
@@ -291,7 +294,8 @@
                 "template",
                 "automation",
                 "personalization"
-            ]
+            ],
+            "featured": true
         },
         {
             "name": "git-commit-pro",
@@ -337,7 +341,8 @@
                 "container",
                 "image-optimization",
                 "devops"
-            ]
+            ],
+            "featured": true
         },
         {
             "name": "security-audit",
@@ -353,7 +358,8 @@
                 "secrets",
                 "compliance",
                 "vulnerability"
-            ]
+            ],
+            "featured": true
         }
     ]
 }
