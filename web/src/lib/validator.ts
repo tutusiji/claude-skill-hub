@@ -30,7 +30,7 @@ interface Schema {
   properties: Record<string, SchemaProperty>;
 }
 const PLUGIN_SCHEMA: Schema = {
-  required: ['name', 'version', 'description', 'category'],
+  required: ['name', 'version', 'description'],
   properties: {
     name: { type: 'string', minLength: 1, maxLength: 64, pattern: '^[a-z0-9][a-z0-9-]*$' },
     version: { type: 'string', pattern: '^\\d+\\.\\d+\\.\\d+$' },
@@ -180,11 +180,15 @@ export function validatePluginDir(pluginPath: string, pluginName?: string): Vali
   // 2. Schema 校验
   errors.push(...validateAgainstSchema(manifest, PLUGIN_SCHEMA, 'plugin.json'));
 
-  // 3. name 与目录名一致
+  // 3. name 与目录名一致（兼容版本化目录名，如 superpowers-6.1.0）
   const dirName = basename(pluginPath);
   const manifestName = manifest.name as string | undefined;
-  if (manifestName && manifestName !== dirName) {
-    errors.push(`plugin.json 的 name "${manifestName}" 与目录名 "${dirName}" 不一致`);
+  if (manifestName) {
+    // 剥离目录名末尾的版本后缀：-1.0.0, -6.1.0, .1.2.3 等
+    const baseDirName = dirName.replace(/[-.]\d+\.\d+\.\d+$/, '');
+    if (manifestName !== dirName && manifestName !== baseDirName) {
+      errors.push(`plugin.json 的 name "${manifestName}" 与目录名 "${dirName}" 不一致`);
+    }
   }
   summary.pluginName = manifestName;
   summary.version = manifest.version as string | undefined;
