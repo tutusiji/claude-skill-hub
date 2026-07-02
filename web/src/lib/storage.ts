@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdir
 import { join, isAbsolute, basename } from 'path';
 import { execSync } from 'child_process';
 import type { Plugin, PluginSkill, PluginCommand } from './types';
+import { findPluginRoot } from './validator';
 
 // ─── Directory Setup ───────────────────────────────────────
 function resolveDir(envVar: string | undefined, fallback: string): string {
@@ -160,20 +161,8 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
       return { success: false, error: '不支持的文件格式' };
     }
 
-    // Find plugin root (contains .claude-plugin/plugin.json)
-    let pluginRoot: string | null = null;
-    if (existsSync(join(tmpDir, '.claude-plugin', 'plugin.json'))) {
-      pluginRoot = tmpDir;
-    } else {
-      for (const entry of readdirSync(tmpDir)) {
-        const fullPath = join(tmpDir, entry);
-        if (statSync(fullPath).isDirectory() &&
-            existsSync(join(fullPath, '.claude-plugin', 'plugin.json'))) {
-          pluginRoot = fullPath;
-          break;
-        }
-      }
-    }
+    // Find plugin root (contains .claude-plugin/plugin.json) — 递归搜索，支持嵌套 ZIP
+    const pluginRoot = findPluginRoot(tmpDir);
     if (!pluginRoot) return { success: false, error: '未找到有效的插件结构（缺少 .claude-plugin/plugin.json）' };
 
     // Read plugin.json manifest

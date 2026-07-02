@@ -133,18 +133,19 @@ function extractArchive(filepath: string, destDir: string): void {
 }
 
 // 查找插件根目录：包含 .claude-plugin/plugin.json 的目录
-function findPluginRoot(dir: string): string | null {
+// 递归搜索，支持 ZIP 内任意深度的嵌套目录（如 skills-main/skills-main/...）
+export function findPluginRoot(dir: string): string | null {
   // 先检查当前目录
   if (existsSync(join(dir, '.claude-plugin', 'plugin.json'))) {
     return dir;
   }
-  // 检查一级子目录（zip 可能包含一个顶层目录）
+  // 递归检查所有子目录
   for (const entry of readdirSync(dir)) {
+    if (entry.startsWith('.') || entry === 'node_modules') continue;
     const fullPath = join(dir, entry);
     if (statSync(fullPath).isDirectory()) {
-      if (existsSync(join(fullPath, '.claude-plugin', 'plugin.json'))) {
-        return fullPath;
-      }
+      const found = findPluginRoot(fullPath);
+      if (found) return found;
     }
   }
   return null;

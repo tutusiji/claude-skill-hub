@@ -2,23 +2,25 @@
 
 ## 1. 概述
 
-Skill Hub 是一套面向公司内部的 Claude Code 插件分发平台。它由三个核心层组成：
+Skill Hub 是一套面向公司内部的 Claude Code 插件分发平台。系统采用**文件管理架构**（非 Git 仓库模式），通过 Web 表单上传插件包，管理员审核后一键上架，前台自动展示。
 
-- **Marketplace 仓库层** — 遵循 Claude Code 原生 `marketplace.json` 规范的 Git 仓库，是插件存储和分发的唯一数据源 (single source of truth)。
-- **Web UI 层** — Next.js 应用，从 marketplace 仓库生成 registry 数据，提供浏览、搜索、详情查看和安装命令复制。
-- **CI/CD 层** — GitHub Actions 流水线，负责 PR 验证、密钥扫描、registry 生成和 Web UI 自动部署。
+### 核心流程
 
-此外还有一个横切关注点：**贡献审核流程**，通过 CI 闸门 + 人工 review 保障插件质量。
+```
+贡献者 → 表单上传 ZIP → 管理员审核 → 验证通过 → 一键上架 → 前台展示
+                                    ↓
+                              验证失败/拒绝 → 删除工单
+```
 
 ### 设计目标
 
 | 目标 | 实现方式 |
 |------|----------|
-| 零外部依赖 | Web UI 读静态 registry.json，不需要数据库或搜索引擎 |
-| Claude Code 原生兼容 | marketplace.json 遵循 Anthropic 官方 schema，`/plugin marketplace add` 直接接入 |
-| 贡献有闸门 | CI 自动校验 schema、结构、密钥，人工 review 才能合并 |
-| 百人团队可扩展 | 纯 Git 仓库 + 静态前端，无状态瓶颈 |
-| 内网安全 | 密钥扫描 + 无外部网络调用 + UNLICENSED |
+| 零外部依赖 | 文件系统存储 + JSON 数据文件，不需要数据库 |
+| 上传即用 | Web 表单上传 ZIP，无需 Git 操作 |
+| 质量闸门 | 用户上传前自测 + 管理员审核时验证 |
+| 嵌套兼容 | 递归搜索 ZIP 内插件根目录，支持任意层级嵌套 |
+| 内网安全 | 密钥扫描 + 无外部网络调用 |
 
 ---
 
@@ -26,441 +28,335 @@ Skill Hub 是一套面向公司内部的 Claude Code 插件分发平台。它由
 
 ```
 claude-skill-hub/
-├── .claude-plugin/
-│   └── marketplace.json              # Claude Code marketplace 入口（唯一数据源）
-│
-├── plugins/                           # 所有插件目录
-│   └── code-review-skill/             # 示例插件
+├── plugins/                           # 静态插件目录（随仓库分发）
+│   └── code-review-skill/
 │       ├── .claude-plugin/
-│       │   └── plugin.json            # 插件清单（name, version, description, category）
+│       │   └── plugin.json
 │       ├── skills/
 │       │   └── code-review/
-│       │       └── SKILL.md           # Skill 定义（YAML frontmatter + Markdown 指令）
-│       └── commands/                  # 可选：slash 命令
+│       │       └── SKILL.md
+│       └── commands/
 │
 ├── scripts/
-│   ├── validate-plugin.mjs            # CI 和本地验证脚本
-│   ├── generate-registry.mjs          # 从 marketplace.json 生成 Web UI 数据
+│   ├── validate-plugin.mjs            # 原始验证脚本（CI/本地）
 │   └── schemas/
-│       ├── marketplace.schema.json    # marketplace.json 的 JSON Schema
-│       └── plugin.schema.json         # plugin.json 的 JSON Schema
+│       ├── marketplace.schema.json
+│       └── plugin.schema.json
 │
 ├── web/                               # Next.js Web UI
-│   ├── Dockerfile                     # 生产部署镜像
-│   ├── next.config.ts                 # standalone output 模式
+│   ├── next.config.ts                 # standalone output + bodySizeLimit 50mb
 │   ├── package.json
-│   ├── tailwind.config.ts
+│   ├── tailwind.config.ts             # brand 色板：橙色 #ea9518
 │   └── src/
 │       ├── app/
-│       │   ├── layout.tsx             # 全局布局（header + footer）
-│       │   ├── page.tsx               # 首页：浏览 + 搜索 + 分类筛选
-│       │   ├── globals.css            # 暗色主题 CSS 变量
-│       │   ├── plugins/[name]/page.tsx  # 插件详情页
-│       │   └── contribute/page.tsx    # 贡献指南页
+│       │   ├── layout.tsx             # 全局布局（header + footer + 暗色/亮色切换）
+│       │   ├── page.tsx               # 首页：静态插件 + 动态已发布插件合并展示
+│       │   ├── globals.css            # CSS 变量主题
+│       │   ├── icon.svg               # 橙色拼图块 favicon
+│       │   ├── plugins/[name]/page.tsx  # 插件详情页（SSG + 动态 fallback）
+│       │   ├── contribute/page.tsx    # 贡献页面（表单 + 上传前验证 + 教程）
+│       │   ├── guide/page.tsx         # 使用指南
+│       │   ├── admin/
+│       │   │   ├── page.tsx           # 管理后台登录
+│       │   │   └── dashboard/page.tsx # 管理后台（提交审核/插件管理/统计数据）
+│       │   └── api/
+│       │       ├── contribute/route.ts        # 贡献上传 API
+│       │       ├── validate/route.ts           # 上传前验证 API
+│       │       ├── stats/route.ts              # 公开统计 API
+│       │       ├── published-plugins/route.ts  # 已发布插件公开列表
+│       │       ├── plugins/[name]/download/route.ts  # 下载追踪
+│       │       └── admin/
+│       │           ├── login/route.ts
+│       │           ├── logout/route.ts
+│       │           └── submissions/
+│       │               ├── route.ts                    # 提交列表
+│       │               └── [id]/
+│       │                   ├── route.ts                # 状态更新 + 删除
+│       │                   ├── validate/route.ts       # 管理员验证
+│       │                   ├── publish/route.ts        # 上架
+│       │                   └── download/route.ts       # 下载审核文件
 │       ├── components/
-│       │   ├── search-bar.tsx         # 搜索输入框
-│       │   ├── category-filter.tsx    # 分类筛选标签组
-│       │   ├── plugin-card.tsx        # 插件卡片
-│       │   └── copy-button.tsx        # 一键复制安装命令
+│       │   ├── search-bar.tsx
+│       │   ├── category-filter.tsx
+│       │   ├── plugin-card.tsx
+│       │   ├── copy-button.tsx
+│       │   ├── copy-button-with-tracking.tsx
+│       │   └── error-boundary.tsx
 │       └── lib/
 │           ├── types.ts               # TypeScript 类型定义
-│           ├── utils.ts               # cn() 类名合并工具
-│           └── registry.json          # 生成产物，Web UI 的数据源
-│
-├── .github/workflows/
-│   ├── validate-pr.yml                # PR 验证流水线
-│   └── deploy-web.yml                 # Web UI 构建部署流水线
+│           ├── registry.json          # 静态插件数据（23 插件）
+│           ├── storage.ts             # 核心存储引擎（提交/发布/删除/统计）
+│           ├── validator.ts           # 插件验证库（递归 findPluginRoot）
+│           ├── published-plugins.ts   # 轻量级已发布插件读取器
+│           ├── auth.ts                # Cookie-based 认证
+│           └── utils.ts
 │
 ├── docs/
 │   └── architecture.md                # 本文档
 │
-├── CONTRIBUTING.md                    # 贡献指南
-├── README.md                          # 项目说明
-└── package.json                       # 根 package.json（validate + generate-registry 脚本）
+└── package.json
+```
+
+### 运行时数据目录
+
+```
+/opt/skill-hub/                        # 生产环境数据根目录
+├── data/
+│   ├── submissions.json               # 提交记录
+│   ├── published-plugins.json         # 已发布插件元数据
+│   ├── plugin-stats.json              # 下载统计
+│   ├── plugin-status.json             # 上下架状态
+│   ├── download-log.json              # 下载日志（最近 200 条）
+│   ├── plugins/                       # 已发布插件的解压目录
+│   │   └── <plugin-name>/
+│   │       ├── .claude-plugin/plugin.json
+│   │       ├── skills/...
+│   │       └── commands/...
+│   └── tmp/                           # 解压临时目录（用后即删）
+└── uploads/                           # 上传的原始 ZIP/TAR.GZ 文件
+    └── <timestamp>-<filename>.zip
 ```
 
 ---
 
 ## 3. 核心组件
 
-### 3.1 Marketplace 仓库层
+### 3.1 存储引擎（storage.ts）
 
-#### marketplace.json
+文件系统的封装层，管理所有运行时数据。核心函数：
 
-位于 `.claude-plugin/marketplace.json`，是整个系统的唯一数据源。Claude Code CLI 通过 `/plugin marketplace add <org>/<repo>` 读取此文件来注册 marketplace。
+| 函数 | 职责 |
+|------|------|
+| `createSubmission()` | 保存上传文件到 uploads/，写入 submissions.json |
+| `getSubmissions()` | 读取所有提交记录 |
+| `getSubmission(id)` | 获取单条提交 |
+| `updateSubmissionStatus(id, status)` | 更新提交状态（pending/approved/rejected/published） |
+| `publishSubmission(id)` | 解压 ZIP → 递归查找插件根 → 复制到 plugins/ → 写入 published-plugins.json |
+| `deleteSubmission(id)` | 删除上传文件 + 提交记录 + 已发布插件（如已上架） |
+| `getPublishedPlugins()` | 读取已发布插件列表 |
+| `incrementDownload(name)` | 下载计数 + 写日志 |
 
-```json
-{
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "internal-skill-hub",
-  "version": "1.0.0",
-  "owner": { "name": "...", "email": "..." },
-  "metadata": { "description": "...", "version": "1.0.0" },
-  "plugins": [
-    {
-      "name": "code-review-skill",
-      "description": "...",
-      "source": "./plugins/code-review-skill",
-      "version": "1.0.0",
-      "category": "developer-tools",
-      "keywords": ["code-review", "security"]
-    }
-  ]
-}
-```
+**ZIP 嵌套目录处理**：`publishSubmission` 调用 `validator.ts` 的 `findPluginRoot()`，递归搜索解压目录中包含 `.claude-plugin/plugin.json` 的子目录。无论 ZIP 内是平铺结构还是多层嵌套（如 `skills-main/skills-main/...`），都能正确定位插件根目录。
 
-关键字段：
-- `name` — marketplace 标识符，安装时用 `@internal-skill-hub` 引用
-- `plugins[].source` — 相对于仓库根目录的插件路径，必须以 `./` 开头
-- `plugins[].category` — 用于 Web UI 分类筛选
+### 3.2 验证系统（validator.ts）
 
-#### 插件结构
-
-每个插件是 `plugins/` 下的一个目录，包含：
-
-| 文件/目录 | 必需 | 说明 |
-|-----------|------|------|
-| `.claude-plugin/plugin.json` | 是 | 插件清单，定义 name/version/description/category |
-| `skills/<skill-name>/SKILL.md` | 是 | Skill 定义，YAML frontmatter (name, description) + Markdown 指令体 |
-| `commands/<cmd-name>.md` | 否 | Slash 命令定义 |
-
-plugin.json 的 `name` 必须与目录名一致，且为 lowercase hyphen-case。
-
-SKILL.md 的 frontmatter `description` 是 Claude Code 触发 skill 的主要依据，需明确描述做什么和何时使用。
-
-### 3.2 验证脚本层
-
-#### validate-plugin.mjs
-
-CI 和本地共用的验证脚本，执行四类检查：
+四层校验，用户和管理员各一个入口：
 
 ```
-validate-plugin.mjs
-├── 1. marketplace.json schema 校验
-│   └── 必填字段 (name, version, owner, plugins)
-│   └── 字段类型和格式 (version 匹配 semver)
+validator.ts
+├── 1. plugin.json schema 校验
+│   └── 必填字段 (name, version, description, category)
+│   └── 字段格式 (name 小写连字符, version semver, description ≥10 字符)
 │
-├── 2. 插件结构校验（遍历 marketplace.json 中每个 plugin entry）
-│   ├── plugin.json 存在且 JSON 合法
-│   ├── plugin.json schema 校验
-│   ├── manifest name 与目录名一致
-│   └── SKILL.md 存在且有 YAML frontmatter
+├── 2. 插件结构校验
+│   ├── .claude-plugin/plugin.json 存在且 JSON 合法
+│   ├── skills/<name>/SKILL.md 存在且有 YAML frontmatter
+│   └── commands/<name>.md（可选）
 │
-├── 3. 双向一致性检查
-│   ├── marketplace.json 中引用的 source 路径必须存在
-│   └── 磁盘上的插件目录必须在 marketplace.json 中注册（warning）
+├── 3. 一致性检查
+│   └── plugin.json name 与目录名一致
 │
 └── 4. 密钥扫描
-    └── 正则匹配 sk-*, AKIA*, ghp_*, RSA PRIVATE KEY 等
+    └── 正则匹配 sk-*, AKIA*, ghp_*, RSA/EC PRIVATE KEY
     └── 扫描 .md/.json/.js/.ts/.py/.sh/.yaml/.txt 文件
 ```
 
-退出码：0 = 通过，1 = 有 error。warning 不阻断。
+**两个验证入口**：
+- `POST /api/validate` — 贡献者上传前自测（FormData 上传文件）
+- `GET /api/admin/submissions/[id]/validate` — 管理员审核时验证
 
-#### generate-registry.mjs
+**findPluginRoot 递归搜索**：先检查当前目录是否有 `.claude-plugin/plugin.json`，没有则递归遍历所有子目录（跳过 `.` 开头和 `node_modules`），支持 ZIP 内任意深度的嵌套目录结构。
 
-从 marketplace.json + 插件目录生成 `web/src/lib/registry.json`，作为 Web UI 的静态数据源。
+### 3.3 认证系统（auth.ts）
 
-数据流：
-```
-marketplace.json          插件目录
-     │                       │
-     └───────┬───────────────┘
-             │
-    generate-registry.mjs
-             │
-     ┌───────┴───────────┐
-     │  遍历 plugins[]    │
-     │  读取 plugin.json  │
-     │  收集 skills[]     │
-     │  收集 commands[]   │
-     └───────┬───────────┘
-             │
-    registry.json
-    (Web UI 数据源)
-```
+Cookie-based token 认证（非 JWT 库，自实现）：
 
-registry.json 的每条记录合并了 marketplace.json entry 和 plugin.json manifest，并附带从 SKILL.md frontmatter 解析的 skills 列表和从 commands/ 目录收集的命令列表。
+- `login(username, password)` → 生成 base64 编码的 token（含过期时间），设置 HttpOnly cookie
+- `verifyAuth()` → 从 cookie 读取 token，验证未过期
+- 管理员凭据通过环境变量配置
 
-### 3.3 Web UI 层
+### 3.4 Web UI 层
 
 #### 技术栈
 
 - **框架**: Next.js 15 (App Router, standalone output)
-- **样式**: Tailwind CSS + CSS 变量（暗色主题）
+- **样式**: Tailwind CSS + CSS 变量（暗色/亮色主题）
+- **主题色**: 橙色 `#ea9518`（brand 色板）
 - **图标**: lucide-react
-- **数据**: 静态 registry.json，构建时注入，无需运行时数据库
-- **部署**: Docker (standalone 模式)
+- **部署**: systemd + nginx 反代（非 Docker）
 
 #### 页面架构
 
 ```
-layout.tsx (全局布局: header + footer)
+layout.tsx (全局布局: header + footer + 主题切换)
 ├── page.tsx (首页 — 客户端组件)
-│   ├── SearchBar          # 全文搜索
-│   ├── CategoryFilter     # 分类标签筛选
-│   └── PluginCard[]       # 插件卡片网格
+│   ├── 静态 registry.json 插件 (23 个)
+│   ├── 动态 published-plugins.json 插件 (管理员上架)
+│   ├── SearchBar + CategoryFilter
+│   └── PluginCard[] (下载量 TOP 3 显示 Flame 图标)
 │
-├── plugins/[name]/page.tsx (详情页 — 服务端组件, SSG)
-│   ├── 插件元信息展示
-│   ├── CopyButton         # 复制安装命令
-│   ├── Skills 列表
-│   └── Commands 列表
+├── plugins/[name]/page.tsx (详情页 — 服务端组件)
+│   ├── SSG 预渲染静态插件 (generateStaticParams)
+│   ├── dynamicParams=true → 动态已发布插件 SSR 按需渲染
+│   └── CopyButtonWithTracking (复制安装命令 + 下载追踪)
 │
-└── contribute/page.tsx (贡献指南 — 静态页面)
-    └── 四步引导 + 审核标准
+├── contribute/page.tsx (贡献页面)
+│   ├── 四步教程（创建目录 → plugin.json → SKILL.md → 打包上传）
+│   ├── 上传前验证按钮（实时显示错误/警告/概要）
+│   └── 提交表单（姓名/工号/邮箱/部门/描述/文件）
+│
+└── admin/dashboard/page.tsx (管理后台)
+    ├── 提交审核 Tab
+    │   ├── 每条提交：下载审核 / 验证 / 上架 / 通过 / 拒绝 / 删除
+    │   └── 验证结果展开：错误列表 + 警告列表 + 插件元信息
+    ├── 插件管理 Tab（上下架）
+    └── 统计数据 Tab（总插件/技能/分类/贡献者/下载量）
 ```
 
-#### 客户端 vs 服务端组件划分
+#### 静态 + 动态插件合并展示
 
-| 组件 | 渲染模式 | 原因 |
-|------|----------|------|
-| `page.tsx` (首页) | Client | 需要搜索/筛选的交互状态 |
-| `plugins/[name]/page.tsx` | Server (SSG) | 静态内容，构建时预渲染 |
-| `contribute/page.tsx` | Server | 纯静态内容 |
-| `search-bar.tsx` | Client | 受控输入 |
-| `category-filter.tsx` | Client | 点击交互 |
-| `copy-button.tsx` | Client | clipboard API |
-| `plugin-card.tsx` | Server | 纯展示，无交互状态 |
+首页 mount 时 fetch `/api/published-plugins`，将动态插件合并到静态 `registry.json` 插件列表中。搜索、分类筛选、下载量排序均在前端 `useMemo` 中完成。
 
-#### 数据流
-
-```
-registry.json (构建时生成)
-      │
-      ▼
-  page.tsx
-  ├── 导入 registry.json → plugins[]
-  ├── useMemo 计算 allCategories
-  ├── useMemo 计算 categoryCounts
-  └── useMemo 根据 query + category 过滤
-      │
-      ▼
-  PluginCard 渲染
-  └── 点击 → 跳转 /plugins/[name]
-              └── generateStaticParams 预渲染所有插件详情页
-```
-
-#### 搜索实现
-
-纯前端内存搜索，无后端依赖。搜索范围覆盖：
-- 插件名称 (name)
-- 插件描述 (description)
-- 关键词 (keywords[])
-- Skill 名称和描述 (skills[].name, skills[].description)
-
-搜索 + 分类筛选可叠加，均为 client-side `useMemo` 过滤。
-
-#### 主题系统
-
-使用 CSS 变量定义暗色主题，在 `globals.css` 中声明：
-
-```css
-:root {
-  --background: #0f1117;
-  --foreground: #e4e4e7;
-  --card: #1a1a24;
-  --border: #2a2a3a;
-  --muted: #71717a;
-}
-```
-
-Tailwind 通过 `tailwind.config.ts` 的 `brand` 色板扩展，用于强调色（搜索框聚焦、选中状态、安装命令高亮）。
-
-### 3.4 CI/CD 层
-
-#### validate-pr.yml（PR 验证）
-
-触发条件：PR 修改了 `plugins/**`、`.claude-plugin/marketplace.json` 或 `scripts/**`。
-
-```
-checkout → setup-node → validate-plugin.mjs → generate-registry.mjs
-    │
-    ├── 检查新增插件是否已注册到 marketplace.json
-    │   (git diff 提取变更的插件目录名 → 查 marketplace.json)
-    │
-    └── grep 密钥扫描（CI 层二次检查，不依赖脚本）
-```
-
-任何步骤失败都会阻断 PR 合并。
-
-#### deploy-web.yml（Web UI 部署）
-
-触发条件：push 到 main 分支且修改了 marketplace.json、plugins/ 或 web/。
-
-```
-checkout → setup-node → generate-registry.mjs → npm ci → npm run build
-    │
-    ├── docker build (standalone 模式)
-    │
-    └── deploy (TODO: 推送内部 registry + 重启服务)
-```
-
-部署部分是模板代码，需要根据实际内部基础设施填写（Docker registry 地址、部署服务器、SSH 命令等）。
+插件详情页设置 `dynamicParams = true`，SSG 插件走预渲染，动态上架的插件走 SSR 按需渲染。
 
 ---
 
-## 4. 数据流全景
+## 4. 数据流
 
 ### 4.1 贡献者提交流程
 
 ```
-贡献者                          Git 仓库                        CI
+贡献者                           Web UI                        后端
   │                               │                              │
-  │  1. 创建 plugins/my-plugin/   │                              │
-  │  2. 写 plugin.json + SKILL.md │                              │
-  │  3. node validate-plugin.mjs  │                              │
-  │  4. 注册到 marketplace.json   │                              │
-  │  5. git push + 开 PR ─────────│─────────────────────────────→│
+  │  1. 填写表单 + 选择 ZIP        │                              │
+  │  2. 点击"上传前验证" ─────────→│ POST /api/validate           │
+  │                               │   → 解压到临时目录            │
+  │                               │   → findPluginRoot 递归查找  │
+  │                               │   → 四层校验                  │
+  │  3. 查看验证结果 ←─────────────│ ← { passed, errors, ... }   │
   │                               │                              │
-  │                               │                   6. CI 跑 validate-pr.yml
-  │                               │                      ├── schema 校验
-  │                               │                      ├── 结构检查
-  │                               │                      ├── 密钥扫描
-  │                               │                      └── 注册检查
-  │                               │                              │
-  │  7. CI 通过 ←────────────────│─────────────────────────────│
-  │                               │                              │
-  │  8. 平台团队 review           │                              │
-  │  9. 合并到 main ─────────────→│                              │
-  │                               │                   10. 触发 deploy-web.yml
-  │                               │                       ├── generate-registry
-  │                               │                       ├── build Next.js
-  │                               │                       └── deploy Docker
-  │                               │                              │
-  │                               │              11. Web UI 更新，新插件可见
+  │  4. 点击"提交审核" ───────────→│ POST /api/contribute         │
+  │                               │   → 保存文件到 uploads/       │
+  │                               │   → 写入 submissions.json     │
+  │  5. 收到成功确认 ←─────────────│ ← { success, id }           │
 ```
 
-### 4.2 用户安装流程
+### 4.2 管理员审核上架流程
 
 ```
-用户 (Claude Code CLI)
-  │
-  │  1. /plugin marketplace add <org>/claude-skill-hub
-  │     → CLI 拉取仓库，读取 .claude-plugin/marketplace.json
-  │     → marketplace 注册为 "internal-skill-hub"
-  │
-  │  2. /plugin install my-plugin@internal-skill-hub
-  │     → CLI 从 source 路径拉取插件文件
-  │     → 安装到 ~/.claude/plugins/
-  │
-  │  3. 插件的 skills 自动被 Claude Code 发现和触发
+管理员                          Dashboard                      后端
+  │                               │                              │
+  │  1. 登录管理后台              │                              │
+  │  2. 查看提交列表              │                              │
+  │  3. 点击"验证" ──────────────→│ GET /api/.../validate        │
+  │  4. 查看验证结果              │   → 四层校验                  │
+  │     ✓ 通过 → "上架"按钮出现   │                              │
+  │     ✗ 失败 → 显示错误列表     │                              │
+  │                               │                              │
+  │  5. 点击"上架" ──────────────→│ POST /api/.../publish        │
+  │                               │   → 解压 ZIP                 │
+  │                               │   → findPluginRoot 递归查找  │
+  │                               │   → 复制到 data/plugins/     │
+  │                               │   → 写入 published-plugins.json
+  │                               │   → 状态改为 published       │
+  │  6. 前台立即可见 ←────────────│                              │
 ```
 
-### 4.3 Web UI 数据流
+### 4.3 用户浏览安装流程
 
 ```
-marketplace.json + plugins/
-        │
-        │ generate-registry.mjs (构建时)
-        ▼
-  registry.json (静态文件)
-        │
-        │ Next.js import (构建时)
-        ▼
-   page.tsx (客户端)
-   ├── 搜索/筛选 (useMemo, 内存中)
-   └── PluginCard 渲染
-        │
-        │ 用户点击
-        ▼
-   /plugins/[name] (SSG 预渲染)
-   └── generateStaticParams → 每个插件一个静态 HTML
+用户 (浏览器)                    Web UI
+  │                               │
+  │  1. 访问首页                  │
+  │     → 静态插件 + 动态已发布插件合并展示
+  │     → 搜索/分类筛选           │
+  │                               │
+  │  2. 点击插件卡片              │
+  │     → /plugins/[name]         │
+  │     → SSG 预渲染 or SSR 动态  │
+  │                               │
+  │  3. 复制安装命令              │
+  │     → POST /api/.../download  │
+  │     → 下载计数 +1             │
+  │                               │
+  │  4. Claude Code CLI 安装      │
+  │     /plugin marketplace add   │
+  │     /plugin install <name>    │
 ```
-
-整个 Web UI 没有运行时数据获取，所有数据在构建时注入。这意味着 Web UI 内容更新 = 重新构建（由 deploy-web.yml 自动完成）。
 
 ---
 
 ## 5. 安全设计
 
-### 5.1 密钥防护（双重检查）
+### 5.1 密钥防护
 
 | 层 | 机制 | 位置 |
 |----|------|------|
-| 本地 | `validate-plugin.mjs` 的 `checkSecrets()` | 贡献者提交前 |
-| CI | `validate-pr.yml` 的 grep 扫描 | PR 合并前 |
+| 贡献者 | 上传前验证按钮 | 提交前 |
+| 管理员 | 审核时验证 | 上架前 |
 
-扫描模式：API key 前缀 (sk-, AKIA, ghp_)、RSA/EC 私钥头、高熵密码字符串。
+扫描模式：API key 前缀 (sk-, AKIA, ghp_, gho_, ghs_)、RSA/EC 私钥头、高熵密码字符串。
 
-### 5.2 插件安全约束
+### 5.2 访问控制
 
-通过 CONTRIBUTING.md 和 review 流程约定：
+- 管理后台需登录（Cookie-based token 认证）
+- 上传文件大小限制 50MB（next.config.ts `serverActions.bodySizeLimit`）
+- 上传文件名重命名为 `<timestamp>-<original-name>` 防路径冲突
+- 管理端 API 均校验 `verifyAuth()`
+
+### 5.3 插件安全约束
+
+- 禁止包含硬编码密钥/令牌/凭证
 - 禁止外部网络调用（除非有文档说明）
 - 禁止文件系统操作超出项目范围
-- 禁止 `eval()` 或动态代码执行
-- 所有插件 UNLICENSED，仅限内部使用
-
-### 5.3 访问控制
-
-- Git 仓库设为私有，仅内部员工可访问
-- Claude Code 的 `/plugin marketplace add` 需要仓库读权限
-- Web UI 部署在内网，通过内网网关控制访问
-- 合并权限通过 CODEOWNERS + branch protection 控制
+- 所有插件仅限内部使用
 
 ---
 
-## 6. 扩展性考量
+## 6. 部署架构
 
-### 6.1 当前方案的限制
+### 6.1 生产部署（systemd + nginx）
 
-| 限制 | 影响 | 缓解方式 |
-|------|------|----------|
-| 搜索是前端内存 | 插件数量 >500 时首屏加载变慢 | 迁移到 Meilisearch / Algolia |
-| registry.json 构建时生成 | Web UI 更新有部署延迟 | 加 webhook + 增量重建 |
-| 无用户系统 | 无法跟踪谁安装了什么 | 接入内部 SSO + 安装统计 |
-| 无版本历史 | 插件更新后旧版本不可用 | marketplace.json 支持多版本 source |
+```
+浏览器 → nginx (HTTPS :7504) → Next.js standalone (:7788)
+                                        │
+                                        ├── /opt/skill-hub/data/     (数据目录)
+                                        └── /opt/skill-hub/uploads/  (上传目录)
+```
 
-### 6.2 扩展路径
+- **systemd 服务**: `skill-hub.service`，运行 `node .next/standalone/server.js`
+- **nginx**: `/etc/nginx/conf.d/skill-hub-7504.conf`，SSL 证书 `/etc/nginx/ssl/joox.cc.pem`
+- **环境变量**: `DATA_DIR=/opt/skill-hub/data`、`UPLOAD_DIR=/opt/skill-hub/uploads`
 
-**搜索增强**: 当插件数量增长到数百级别时，可参考 buildwithclaude 项目引入 Meilisearch 做后端搜索。registry.json 仍作为数据源，但搜索请求走 Meilisearch API。
+### 6.2 构建部署流程
 
-**安装统计**: 在 `/plugin install` 命令外包裹一层内部 CLI 工具，记录安装事件到内部数据库，Web UI 增加下载量展示。
+```bash
+cd web
+npm run build
+cp -r .next/static .next/standalone/.next/static   # standalone 必须手动复制 static
+sudo systemctl restart skill-hub.service
+```
 
-**多版本支持**: marketplace.json 的 `source` 字段可指向不同 Git ref 或子目录，实现同一名多版本共存。
-
-**审核工作流增强**: 引入标签系统（pending-review / approved / changes-requested），通过 GitHub Labels 管理审核状态，CI 根据标签决定是否允许合并。
-
----
-
-## 7. 技术选型理由
-
-### 为什么用 marketplace.json 而不是自建 registry API
-
-Claude Code 原生支持 `/plugin marketplace add <git-repo>`，它读取 `.claude-plugin/marketplace.json`。这是 Anthropic 官方规范的分发通道。自建 API 需要额外维护服务、认证、可用性，而 Git 仓库天然解决版本控制、权限管理、变更追溯。百人团队的规模下，一个 Git 仓库完全够用。
-
-### 为什么 Web UI 读静态 registry.json 而不是实时读 Git
-
-实时读 Git API 有延迟、有 rate limit、有可用性风险。registry.json 在构建时生成并注入到前端 bundle 中，Web UI 变成纯静态应用，部署简单、访问快。代价是更新有部署延迟（从合并到部署通常 1-2 分钟），对内部工具场景完全可接受。
-
-### 为什么用 Next.js 而不是纯 React SPA
-
-- SSG 预渲染插件详情页，SEO 友好（内网搜索可索引）
-- standalone output 模式产出的 Docker 镜像很小（不含 node_modules）
-- App Router 的 server/client 组件划分让交互页面和静态页面各得其所
-- 与 Claude Code 生态中的 buildwithclaude 等项目技术栈一致，便于参考
-
-### 为什么验证脚本用 Node.js ESM 而不是 Python
-
-CI 环境已经需要 Node.js（Next.js 构建），用 Node.js 写验证脚本不需要额外安装 Python 运行时。ESM 模块语法清晰，且 generate-registry.mjs 需要处理 JSON 和文件系统，Node.js 的 `fs` 模块天然适合。
+⚠️ **不要在 production .next 目录上运行 `npm run dev`** — 会覆盖构建产物导致 JS chunk 404。
 
 ---
 
-## 8. 关键文件索引
+## 7. 关键文件索引
 
 | 文件 | 职责 |
 |------|------|
-| [.claude-plugin/marketplace.json](../.claude-plugin/marketplace.json) | Marketplace 入口，Claude Code 读取的唯一配置 |
-| [plugins/code-review-skill/](../plugins/code-review-skill/) | 示例插件，展示标准插件结构 |
-| [scripts/validate-plugin.mjs](../scripts/validate-plugin.mjs) | 验证脚本，CI 和本地共用 |
-| [scripts/generate-registry.mjs](../scripts/generate-registry.mjs) | Registry 生成器，marketplace.json → registry.json |
-| [scripts/schemas/marketplace.schema.json](../scripts/schemas/marketplace.schema.json) | marketplace.json 的 JSON Schema |
-| [scripts/schemas/plugin.schema.json](../scripts/schemas/plugin.schema.json) | plugin.json 的 JSON Schema |
-| [web/src/app/page.tsx](../web/src/app/page.tsx) | 首页，浏览 + 搜索 + 筛选 |
-| [web/src/app/plugins/[name]/page.tsx](../web/src/app/plugins/[name]/page.tsx) | 插件详情页 |
-| [web/src/app/contribute/page.tsx](../web/src/app/contribute/page.tsx) | 贡献指南页 |
+| [web/src/lib/storage.ts](../web/src/lib/storage.ts) | 核心存储引擎：提交/发布/删除/统计 |
+| [web/src/lib/validator.ts](../web/src/lib/validator.ts) | 插件验证库：schema + 结构 + 密钥扫描 + 递归 findPluginRoot |
+| [web/src/lib/published-plugins.ts](../web/src/lib/published-plugins.ts) | 轻量级已发布插件读取器（服务端组件安全使用） |
+| [web/src/lib/auth.ts](../web/src/lib/auth.ts) | Cookie-based token 认证 |
 | [web/src/lib/types.ts](../web/src/lib/types.ts) | TypeScript 类型定义 |
-| [web/src/lib/registry.json](../web/src/lib/registry.json) | 生成产物，Web UI 数据源 |
-| [.github/workflows/validate-pr.yml](../.github/workflows/validate-pr.yml) | PR 验证流水线 |
-| [.github/workflows/deploy-web.yml](../.github/workflows/deploy-web.yml) | Web UI 构建部署流水线 |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | 贡献者指南 |
+| [web/src/lib/registry.json](../web/src/lib/registry.json) | 静态插件数据（23 插件，42 技能） |
+| [web/src/app/page.tsx](../web/src/app/page.tsx) | 首页：静态 + 动态插件合并展示 |
+| [web/src/app/plugins/[name]/page.tsx](../web/src/app/plugins/[name]/page.tsx) | 插件详情页（SSG + 动态 fallback） |
+| [web/src/app/contribute/page.tsx](../web/src/app/contribute/page.tsx) | 贡献页面（表单 + 验证 + 教程） |
+| [web/src/app/admin/dashboard/page.tsx](../web/src/app/admin/dashboard/page.tsx) | 管理后台 Dashboard |
+| [web/src/app/api/contribute/route.ts](../web/src/app/api/contribute/route.ts) | 贡献上传 API |
+| [web/src/app/api/validate/route.ts](../web/src/app/api/validate/route.ts) | 上传前验证 API |
+| [web/src/app/api/admin/submissions/[id]/publish/route.ts](../web/src/app/api/admin/submissions/[id]/publish/route.ts) | 上架 API |
+| [web/next.config.ts](../web/next.config.ts) | standalone output + 50MB bodySizeLimit |
+| [web/tailwind.config.ts](../web/tailwind.config.ts) | brand 橙色色板 |
