@@ -132,28 +132,47 @@ function extractArchive(filepath: string, destDir: string): void {
   }
 }
 
-// 查找插件根目录：包含 .claude-plugin/plugin.json 的目录
+// 查找插件根目录：优先找 .claude-plugin/plugin.json，回退找 skills/ 目录（纯 skill 包）
 // 递归搜索，支持 ZIP 内任意深度的嵌套目录（如 skills-main/skills-main/...）
-export function findPluginRoot(dir: string): string | null {
-  // 先检查当前目录
+export type PluginRoot = { path: string; type: 'plugin' | 'skills-only' };
+
+function hasSkillsDir(dir: string): boolean {
+  const skillsDir = join(dir, 'skills');
+  if (!existsSync(skillsDir)) return false;
+  try {
+    return readdirSync(skillsDir).some(f => {
+      const p = join(skillsDir, f);
+      return statSync(p).isDirectory() && existsSync(join(p, 'SKILL.md'));
+    });
+  } catch { return false; }
+}
+
+export function findPluginRoot(dir: string): PluginRoot | null {
+  // 优先：检查当前目录是否有 .claude-plugin/plugin.json
   if (existsSync(join(dir, '.claude-plugin', 'plugin.json'))) {
-    return dir;
+    return { path: dir, type: 'plugin' };
+  }
+  // 回退：检查当前目录是否有 skills/ + SKILL.md（纯 skill 包）
+  if (hasSkillsDir(dir)) {
+    return { path: dir, type: 'skills-only' };
   }
   // 递归检查所有子目录
   for (const entry of readdirSync(dir)) {
     if (entry.startsWith('.') || entry === 'node_modules') continue;
     const fullPath = join(dir, entry);
-    if (statSync(fullPath).isDirectory()) {
-      const found = findPluginRoot(fullPath);
-      if (found) return found;
-    }
+    try {
+      if (statSync(fullPath).isDirectory()) {
+        const found = findPluginRoot(fullPath);
+        if (found) return found;
+      }
+    } catch { continue; }
   }
   return null;
 }
 
 // ─── 主验证函数 ────────────────────────────────────────────
 
-export function validatePluginDir(pluginPath: string, pluginName?: string): ValidationResult {
+export function validatePluginDir(pluginPath: string, rootType: 'plugin' | 'skills-only' = 'plugin'): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   const summary: ValidationResult['summary'] = {
@@ -162,35 +181,55 @@ export function validatePluginDir(pluginPath: string, pluginName?: string): Vali
     filesScanned: 0,
   };
 
-  // 1. 检查 plugin.json
-  const manifestPath = join(pluginPath, '.claude-plugin', 'plugin.json');
-  if (!existsSync(manifestPath)) {
-    errors.push('缺少 .claude-plugin/plugin.json 文件');
-    return { passed: false, errors, warnings, summary };
-  }
-
   let manifest: Record<string, unknown>;
-  try {
-    manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
-  } catch (e) {
-    errors.push(`plugin.json JSON 解析失败: ${e instanceof Error ? e.message : String(e)}`);
-    return { passed: false, errors, warnings, summary };
-  }
 
-  // 2. Schema 校验
-  errors.push(...validateAgainstSchema(manifest, PLUGIN_SCHEMA, 'plugin.json'));
+  if (rootType === 'skills-only') {
+    // 纯 skill 包：没有 plugin.json，从目录名自动生成元数据
+    const dirName = basename(pluginPath);
+    // 剥离常见后缀：-main, -master, -6.1.0 等版本号
+    const cleanName = dirName.replace(/-(main|master)$/, '').replace(/[-.]\d+\.\d+\.\d+$/, '');
+    // 尝试从 README.md 提取描述
+    let description = `Skill collection from ${cleanName}`;
+    const readmePath = join(pluginPath, 'README.md');
+    if (existsSync(readmePath)) {
+      const readme = readFileSync(readmePath, 'utf-8');
+      // 取第一个非空非标题行作为描述
+      const lines = readme.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('!'));
+      if (lines.length > 0) description = lines[0].trim().slice(0, 200);
+    }
+    manifest = { name: cleanName, version: '1.0.0', description };
+    warnings.push('此包为纯 skill 集合（无 .claude-plugin/plugin.json），已自动生成插件元数据');
+  } else {
+    // 标准 plugin 包：读取 .claude-plugin/plugin.json
+    const manifestPath = join(pluginPath, '.claude-plugin', 'plugin.json');
+    if (!existsSync(manifestPath)) {
+      errors.push('缺少 .claude-plugin/plugin.json 文件');
+      return { passed: false, errors, warnings, summary };
+    }
 
-  // 3. name 与目录名一致（兼容版本化目录名，如 superpowers-6.1.0）
-  const dirName = basename(pluginPath);
-  const manifestName = manifest.name as string | undefined;
-  if (manifestName) {
-    // 剥离目录名末尾的版本后缀：-1.0.0, -6.1.0, .1.2.3 等
-    const baseDirName = dirName.replace(/[-.]\d+\.\d+\.\d+$/, '');
-    if (manifestName !== dirName && manifestName !== baseDirName) {
-      errors.push(`plugin.json 的 name "${manifestName}" 与目录名 "${dirName}" 不一致`);
+    try {
+      manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    } catch (e) {
+      errors.push(`plugin.json JSON 解析失败: ${e instanceof Error ? e.message : String(e)}`);
+      return { passed: false, errors, warnings, summary };
+    }
+
+    // Schema 校验（仅对有 plugin.json 的包）
+    errors.push(...validateAgainstSchema(manifest, PLUGIN_SCHEMA, 'plugin.json'));
+
+    // name 与目录名一致（兼容版本化目录名，如 superpowers-6.1.0）
+    const dirName = basename(pluginPath);
+    const manifestName = manifest.name as string | undefined;
+    if (manifestName) {
+      const baseDirName = dirName.replace(/[-.]\d+\.\d+\.\d+$/, '');
+      if (manifestName !== dirName && manifestName !== baseDirName) {
+        errors.push(`plugin.json 的 name "${manifestName}" 与目录名 "${dirName}" 不一致`);
+      }
     }
   }
-  summary.pluginName = manifestName;
+
+  // 公共：填充 summary
+  summary.pluginName = manifest.name as string | undefined;
   summary.version = manifest.version as string | undefined;
   summary.description = manifest.description as string | undefined;
   summary.category = manifest.category as string | undefined;
@@ -234,7 +273,7 @@ export function validatePluginDir(pluginPath: string, pluginName?: string): Vali
   }
 
   // 6. 密钥扫描
-  summary.filesScanned = scanSecrets(pluginPath, manifestName || dirName, errors);
+  summary.filesScanned = scanSecrets(pluginPath, (manifest.name as string) || basename(pluginPath), errors);
 
   return {
     passed: errors.length === 0,
@@ -267,16 +306,17 @@ export function validateUploadedFile(filepath: string): ValidationResult {
       return { passed: false, errors, warnings, summary };
     }
 
-    // 查找插件根目录
+    // 查找插件根目录（支持 plugin 包和纯 skill 包）
     const pluginRoot = findPluginRoot(tempDir);
     if (!pluginRoot) {
-      errors.push('未找到 .claude-plugin/plugin.json — 请确保压缩包包含正确的插件目录结构');
-      errors.push('期望结构: my-plugin/.claude-plugin/plugin.json + my-plugin/skills/...');
+      errors.push('未找到 .claude-plugin/plugin.json 或 skills/ 目录 — 请确保压缩包包含正确的插件或技能结构');
+      errors.push('期望结构 A (插件): my-plugin/.claude-plugin/plugin.json + my-plugin/skills/...');
+      errors.push('期望结构 B (纯技能): my-skills/skills/<skill-name>/SKILL.md');
       return { passed: false, errors, warnings, summary };
     }
 
     // 执行验证
-    return validatePluginDir(pluginRoot);
+    return validatePluginDir(pluginRoot.path, pluginRoot.type);
   } finally {
     // 清理临时目录
     rmSync(tempDir, { recursive: true, force: true });

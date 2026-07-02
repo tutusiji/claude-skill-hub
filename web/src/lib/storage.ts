@@ -178,21 +178,36 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
       return { success: false, error: '不支持的文件格式' };
     }
 
-    // Find plugin root (contains .claude-plugin/plugin.json) — 递归搜索，支持嵌套 ZIP
+    // Find plugin root — 递归搜索，支持嵌套 ZIP 和纯 skill 包
     const pluginRoot = findPluginRoot(tmpDir);
-    if (!pluginRoot) return { success: false, error: '未找到有效的插件结构（缺少 .claude-plugin/plugin.json）' };
+    if (!pluginRoot) return { success: false, error: '未找到有效的插件结构（缺少 .claude-plugin/plugin.json 或 skills/ 目录）' };
 
-    // Read plugin.json manifest
-    const manifest = JSON.parse(readFileSync(join(pluginRoot, '.claude-plugin', 'plugin.json'), 'utf-8'));
-    const pluginName = manifest.name;
-    if (!pluginName) return { success: false, error: 'plugin.json 缺少 name 字段' };
+    // Read manifest — 从 plugin.json 或自动生成
+    let manifest: Record<string, unknown>;
+    if (pluginRoot.type === 'plugin') {
+      manifest = JSON.parse(readFileSync(join(pluginRoot.path, '.claude-plugin', 'plugin.json'), 'utf-8'));
+    } else {
+      // 纯 skill 包：从目录名自动生成元数据
+      const dirName = basename(pluginRoot.path);
+      const cleanName = dirName.replace(/-(main|master)$/, '').replace(/[-.]\d+\.\d+\.\d+$/, '');
+      let description = `Skill collection from ${cleanName}`;
+      const readmePath = join(pluginRoot.path, 'README.md');
+      if (existsSync(readmePath)) {
+        const readme = readFileSync(readmePath, 'utf-8');
+        const lines = readme.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('!'));
+        if (lines.length > 0) description = lines[0].trim().slice(0, 200);
+      }
+      manifest = { name: cleanName, version: '1.0.0', description };
+    }
+    const pluginName = manifest.name as string;
+    if (!pluginName) return { success: false, error: '插件缺少 name 字段' };
 
     // Move to published plugins directory
     const destDir = join(PUBLISHED_PLUGINS_DIR, pluginName);
     if (existsSync(destDir)) {
       execSync(`rm -rf "${destDir}"`);
     }
-    execSync(`mv "${pluginRoot}" "${destDir}"`);
+    execSync(`mv "${pluginRoot.path}" "${destDir}"`);
 
     // Read skills
     const skills: PluginSkill[] = [];
@@ -230,18 +245,19 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
     }
 
     // Build PublishedPlugin object
+    const m = manifest as Record<string, any>;
     const plugin: PublishedPlugin = {
-      name: manifest.name,
-      description: manifest.description || '',
-      source: `./plugins/${manifest.name}`,
-      version: manifest.version || '1.0.0',
-      category: manifest.category || 'developer-tools',
-      keywords: manifest.keywords || [],
-      author: manifest.author,
+      name: m.name,
+      description: m.description || '',
+      source: `./plugins/${m.name}`,
+      version: m.version || '1.0.0',
+      category: m.category || 'developer-tools',
+      keywords: m.keywords || [],
+      author: m.author,
       skills: skills.length > 0 ? skills : undefined,
       commands: commands.length > 0 ? commands : undefined,
-      homepage: manifest.homepage,
-      license: manifest.license,
+      homepage: m.homepage,
+      license: m.license,
       submissionId: id,
       publishedAt: new Date().toISOString(),
       contributor: { name: sub.name, department: sub.department },
