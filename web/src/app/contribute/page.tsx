@@ -4,7 +4,23 @@ import { useState, useRef } from 'react';
 import {
   GitPullRequest, FileCode, CheckCircle, AlertTriangle, Terminal,
   Upload, User, Mail, Building2, Hash, FileText, Loader2, Check, X,
+  ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, XCircle,
 } from 'lucide-react';
+
+interface ValidationResult {
+  passed: boolean;
+  errors: string[];
+  warnings: string[];
+  summary: {
+    pluginName?: string;
+    version?: string;
+    description?: string;
+    category?: string;
+    skillsCount: number;
+    commandsCount: number;
+    filesScanned: number;
+  };
+}
 
 export default function ContributePage() {
   const [form, setForm] = useState({
@@ -13,6 +29,9 @@ export default function ContributePage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
+  const [showValidationDetail, setShowValidationDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (field: keyof typeof form, value: string) => {
@@ -21,14 +40,54 @@ export default function ContributePage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
-    if (f) setFile(f);
+    if (f) {
+      setFile(f);
+      setValidationResult(null);
+    }
+  };
+
+  // ─── 上传前验证 ───────────────────────────────────
+  const handleValidate = async () => {
+    if (!file) return;
+    setValidating(true);
+    setValidationResult(null);
+    setShowValidationDetail(false);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/validate', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setValidationResult(data);
+      } else {
+        setValidationResult({
+          passed: false,
+          errors: [data.error || '验证失败'],
+          warnings: [],
+          summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 },
+        });
+      }
+    } catch {
+      setValidationResult({
+        passed: false,
+        errors: ['网络错误，请重试'],
+        warnings: [],
+        summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 },
+      });
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setResult(null);
 
-    // Client-side validation
     if (!form.name.trim() || !form.employeeId.trim() || !form.email.trim() ||
         !form.department.trim() || !form.description.trim() || !file) {
       setResult({ success: false, message: '所有字段均为必填项，请完整填写。' });
@@ -55,6 +114,7 @@ export default function ContributePage() {
         setResult({ success: true, message: data.message || '提交成功！' });
         setForm({ name: '', employeeId: '', email: '', department: '', description: '' });
         setFile(null);
+        setValidationResult(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
       } else {
         setResult({ success: false, message: data.error || '提交失败，请重试。' });
@@ -123,7 +183,7 @@ description: 技能描述 — 什么场景下使用
         <Step num={4} icon={Upload} title="打包上传">
           <p className="text-sm text-[var(--muted)]">
             将整个插件目录打包为 <code className="text-brand-500">.zip</code> 文件，通过下方表单上传提交。
-            管理员审核通过后会将插件添加到市场。
+            建议先点击"验证"检查插件结构，验证通过后再提交审核。
           </p>
         </Step>
 
@@ -240,6 +300,110 @@ description: 技能描述 — 什么场景下使用
               )}
             </div>
           </FormField>
+
+          {/* 验证按钮 + 结果 */}
+          {file && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleValidate}
+                  disabled={validating}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[var(--background)] border border-[var(--border)] hover:border-brand-500 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {validating ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 验证中...</>
+                  ) : (
+                    <><ShieldCheck className="w-3.5 h-3.5" /> 上传前验证</>
+                  )}
+                </button>
+                {validationResult && !validating && (
+                  <span className={`text-xs font-medium flex items-center gap-1 ${
+                    validationResult.passed ? 'text-emerald-500' : 'text-red-500'
+                  }`}>
+                    {validationResult.passed ? (
+                      <><CheckCircle className="w-3.5 h-3.5" /> 验证通过</>
+                    ) : (
+                      <><ShieldAlert className="w-3.5 h-3.5" /> 验证失败 ({validationResult.errors.length} 个错误)</>
+                    )}
+                  </span>
+                )}
+              </div>
+
+              {/* 验证结果详情 */}
+              {validationResult && (
+                <div className={`rounded-lg border p-4 ${
+                  validationResult.passed
+                    ? 'bg-emerald-500/5 border-emerald-500/20'
+                    : 'bg-red-500/5 border-red-500/20'
+                }`}>
+                  {/* 概要信息 */}
+                  {validationResult.summary.pluginName && (
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-3">
+                      <span className="text-[var(--muted)]">插件: <code className="text-brand-500">{validationResult.summary.pluginName}</code></span>
+                      {validationResult.summary.version && (
+                        <span className="text-[var(--muted)]">版本: v{validationResult.summary.version}</span>
+                      )}
+                      {validationResult.summary.category && (
+                        <span className="text-[var(--muted)]">分类: {validationResult.summary.category}</span>
+                      )}
+                      <span className="text-[var(--muted)]">技能: {validationResult.summary.skillsCount}</span>
+                      <span className="text-[var(--muted)]">命令: {validationResult.summary.commandsCount}</span>
+                      <span className="text-[var(--muted)]">扫描文件: {validationResult.summary.filesScanned}</span>
+                    </div>
+                  )}
+
+                  {/* 错误列表 */}
+                  {validationResult.errors.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-xs font-medium text-red-500 mb-1">错误 ({validationResult.errors.length})</div>
+                      <ul className="space-y-1">
+                        {validationResult.errors.map((err, i) => (
+                          <li key={i} className="text-xs text-red-400 flex items-start gap-1.5">
+                            <XCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{err}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* 警告列表 */}
+                  {validationResult.warnings.length > 0 && (
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setShowValidationDetail(!showValidationDetail)}
+                        className="text-xs font-medium text-yellow-500 mb-1 flex items-center gap-1"
+                      >
+                        <AlertTriangle className="w-3 h-3" />
+                        警告 ({validationResult.warnings.length})
+                        {showValidationDetail ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                      {showValidationDetail && (
+                        <ul className="space-y-1">
+                          {validationResult.warnings.map((warn, i) => (
+                            <li key={i} className="text-xs text-yellow-400/80 flex items-start gap-1.5">
+                              <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                              <span>{warn}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 通过提示 */}
+                  {validationResult.passed && validationResult.warnings.length === 0 && (
+                    <div className="text-xs text-emerald-500 flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      插件结构完整，无安全风险，可以提交审核。
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"

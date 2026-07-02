@@ -6,6 +6,7 @@ import Link from 'next/link';
 import {
   Wrench, LogOut, Download, CheckCircle, XCircle, Clock,
   Package, TrendingUp, Activity, EyeOff, Eye, ArrowLeft, RefreshCw,
+  ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
@@ -24,6 +25,19 @@ interface Submission {
   filename: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+}
+
+interface ValidationResult {
+  passed: boolean;
+  errors: string[];
+  warnings: string[];
+  summary: {
+    pluginName?: string;
+    version?: string;
+    skillsCount: number;
+    commandsCount: number;
+    filesScanned: number;
+  };
 }
 
 interface StatsData {
@@ -103,6 +117,41 @@ export default function AdminDashboard() {
     }
   };
 
+  const [validationResults, setValidationResults] = useState<Record<string, ValidationResult>>({});
+  const [validatingIds, setValidatingIds] = useState<Set<string>>(new Set());
+  const [expandedValidations, setExpandedValidations] = useState<Set<string>>(new Set());
+
+  const handleValidate = async (id: string) => {
+    setValidatingIds(prev => new Set(prev).add(id));
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}/validate`);
+      const data = await res.json();
+      if (res.ok) {
+        setValidationResults(prev => ({ ...prev, [id]: data }));
+      } else {
+        setValidationResults(prev => ({
+          ...prev,
+          [id]: { passed: false, errors: [data.error || '验证失败'], warnings: [], summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 } },
+        }));
+      }
+    } catch {
+      setValidationResults(prev => ({
+        ...prev,
+        [id]: { passed: false, errors: ['网络错误'], warnings: [], summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 } },
+      }));
+    } finally {
+      setValidatingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  };
+
+  const toggleValidationExpand = (id: string) => {
+    setExpandedValidations(prev => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+  };
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin');
@@ -170,6 +219,11 @@ export default function AdminDashboard() {
                 onDownload={handleDownload}
                 onStatusUpdate={handleStatusUpdate}
                 actionLoading={actionLoading}
+                onValidate={handleValidate}
+                validationResults={validationResults}
+                validatingIds={validatingIds}
+                expandedValidations={expandedValidations}
+                toggleValidationExpand={toggleValidationExpand}
               />
             ) : tab === 'plugins' ? (
               <PluginsTab
@@ -213,11 +267,17 @@ function TabButton({
 // ─── Submissions Tab ───────────────────────────────────────
 function SubmissionsTab({
   submissions, onDownload, onStatusUpdate, actionLoading,
+  onValidate, validationResults, validatingIds, expandedValidations, toggleValidationExpand,
 }: {
   submissions: Submission[];
   onDownload: (id: string) => void;
   onStatusUpdate: (id: string, status: 'approved' | 'rejected') => void;
   actionLoading: string | null;
+  onValidate: (id: string) => void;
+  validationResults: Record<string, ValidationResult>;
+  validatingIds: Set<string>;
+  expandedValidations: Set<string>;
+  toggleValidationExpand: (id: string) => void;
 }) {
   if (submissions.length === 0) {
     return (
@@ -230,57 +290,143 @@ function SubmissionsTab({
 
   return (
     <div className="space-y-3">
-      {submissions.map((sub) => (
-        <div key={sub.id} className="card p-4">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-sm">{sub.name}</h3>
-                <StatusBadge status={sub.status} />
+      {submissions.map((sub) => {
+        const vr = validationResults[sub.id];
+        const isValidating = validatingIds.has(sub.id);
+        const isExpanded = expandedValidations.has(sub.id);
+
+        return (
+          <div key={sub.id} className="card p-4">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="font-semibold text-sm">{sub.name}</h3>
+                  <StatusBadge status={sub.status} />
+                  {vr && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                      vr.passed
+                        ? 'bg-emerald-500/10 text-emerald-500'
+                        : 'bg-red-500/10 text-red-500'
+                    }`}>
+                      {vr.passed ? <ShieldCheck className="w-3 h-3" /> : <ShieldAlert className="w-3 h-3" />}
+                      {vr.passed ? '验证通过' : `${vr.errors.length} 个错误`}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
+                  <span>工号: {sub.employeeId}</span>
+                  <span>邮箱: {sub.email}</span>
+                  <span>部门: {sub.department}</span>
+                  <span>{new Date(sub.createdAt).toLocaleString('zh-CN')}</span>
+                </div>
+                <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{sub.description}</p>
+                <p className="text-xs text-[var(--muted)] mt-1">
+                  文件: <code className="text-brand-500">{sub.filename}</code>
+                </p>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-[var(--muted)]">
-                <span>工号: {sub.employeeId}</span>
-                <span>邮箱: {sub.email}</span>
-                <span>部门: {sub.department}</span>
-                <span>{new Date(sub.createdAt).toLocaleString('zh-CN')}</span>
+            </div>
+
+            {/* 验证结果详情 */}
+            {vr && (
+              <div className={`rounded-lg border p-3 mb-3 ${
+                vr.passed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'
+              }`}>
+                {vr.summary.pluginName && (
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-2">
+                    <span className="text-[var(--muted)]">插件: <code className="text-brand-500">{vr.summary.pluginName}</code></span>
+                    {vr.summary.version && <span className="text-[var(--muted)]">v{vr.summary.version}</span>}
+                    <span className="text-[var(--muted)]">技能: {vr.summary.skillsCount}</span>
+                    <span className="text-[var(--muted)]">命令: {vr.summary.commandsCount}</span>
+                    <span className="text-[var(--muted)]">扫描: {vr.summary.filesScanned} 文件</span>
+                  </div>
+                )}
+                {vr.errors.length > 0 && (
+                  <div className="mb-2">
+                    <div className="text-xs font-medium text-red-500 mb-1">错误 ({vr.errors.length})</div>
+                    <ul className="space-y-0.5">
+                      {vr.errors.map((err, i) => (
+                        <li key={i} className="text-xs text-red-400 flex items-start gap-1.5">
+                          <XCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                          <span>{err}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {vr.warnings.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => toggleValidationExpand(sub.id)}
+                      className="text-xs font-medium text-yellow-500 mb-1 flex items-center gap-1"
+                    >
+                      <AlertTriangle className="w-3 h-3" />
+                      警告 ({vr.warnings.length})
+                      {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                    </button>
+                    {isExpanded && (
+                      <ul className="space-y-0.5">
+                        {vr.warnings.map((warn, i) => (
+                          <li key={i} className="text-xs text-yellow-400/80 flex items-start gap-1.5">
+                            <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{warn}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+                {vr.passed && vr.warnings.length === 0 && (
+                  <div className="text-xs text-emerald-500 flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    插件结构完整，无安全风险。
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-[var(--muted)] mt-2 line-clamp-2">{sub.description}</p>
-              <p className="text-xs text-[var(--muted)] mt-1">
-                文件: <code className="text-brand-500">{sub.filename}</code>
-              </p>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => onDownload(sub.id)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                下载审核
+              </button>
+              <button
+                onClick={() => onValidate(sub.id)}
+                disabled={isValidating}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-[var(--background)] border border-[var(--border)] hover:border-brand-500 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isValidating ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 验证中...</>
+                ) : (
+                  <><ShieldCheck className="w-3.5 h-3.5" /> 验证</>
+                )}
+              </button>
+              {sub.status === 'pending' && (
+                <>
+                  <button
+                    onClick={() => onStatusUpdate(sub.id, 'approved')}
+                    disabled={actionLoading === sub.id}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    通过
+                  </button>
+                  <button
+                    onClick={() => onStatusUpdate(sub.id, 'rejected')}
+                    disabled={actionLoading === sub.id}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    拒绝
+                  </button>
+                </>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onDownload(sub.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
-            >
-              <Download className="w-3.5 h-3.5" />
-              下载审核
-            </button>
-            {sub.status === 'pending' && (
-              <>
-                <button
-                  onClick={() => onStatusUpdate(sub.id, 'approved')}
-                  disabled={actionLoading === sub.id}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-600/10 text-emerald-500 hover:bg-emerald-600/20 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  通过
-                </button>
-                <button
-                  onClick={() => onStatusUpdate(sub.id, 'rejected')}
-                  disabled={actionLoading === sub.id}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <XCircle className="w-3.5 h-3.5" />
-                  拒绝
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
