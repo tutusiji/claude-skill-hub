@@ -10,6 +10,7 @@ import {
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
 import registry from '@/lib/registry.json';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 const plugins = registry as Plugin[];
 
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
       }
 
       const subData = await subRes.json();
-      const statsJson = await statsRes.json();
+      const statsJson = await statsRes.ok ? await statsRes.json() : null;
       setSubmissions(subData.submissions || []);
       setStatsData(statsJson);
     } catch {
@@ -161,21 +162,25 @@ export default function AdminDashboard() {
         {/* Content */}
         {loading ? (
           <div className="text-center py-20 text-[var(--muted)] text-sm">加载中...</div>
-        ) : tab === 'submissions' ? (
-          <SubmissionsTab
-            submissions={submissions}
-            onDownload={handleDownload}
-            onStatusUpdate={handleStatusUpdate}
-            actionLoading={actionLoading}
-          />
-        ) : tab === 'plugins' ? (
-          <PluginsTab
-            statsData={statsData}
-            onTogglePublish={handleTogglePublish}
-            actionLoading={actionLoading}
-          />
         ) : (
-          <StatsTab statsData={statsData} />
+          <ErrorBoundary>
+            {tab === 'submissions' ? (
+              <SubmissionsTab
+                submissions={submissions}
+                onDownload={handleDownload}
+                onStatusUpdate={handleStatusUpdate}
+                actionLoading={actionLoading}
+              />
+            ) : tab === 'plugins' ? (
+              <PluginsTab
+                statsData={statsData}
+                onTogglePublish={handleTogglePublish}
+                actionLoading={actionLoading}
+              />
+            ) : (
+              <StatsTab statsData={statsData} />
+            )}
+          </ErrorBoundary>
         )}
       </div>
     </main>
@@ -350,7 +355,7 @@ function StatsTab({ statsData }: { statsData: StatsData | null }) {
         <div className="card p-4">
           <div className="text-xs text-[var(--muted)] mb-1">已上架插件</div>
           <div className="text-2xl font-bold">
-            {Object.entries(statsData.statusMap).filter(([, v]) => v !== false).length}
+            {Object.entries(statsData.statusMap || {}).filter(([, v]) => v !== false).length}
           </div>
         </div>
         <div className="card p-4">
