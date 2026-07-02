@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles } from 'lucide-react';
+import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles, Download, Flame } from 'lucide-react';
 import Link from 'next/link';
-import { CopyButton } from '@/components/copy-button';
+import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import registry from '@/lib/registry.json';
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
@@ -84,7 +84,7 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
         {/* Install Command */}
         <div className="flex items-center gap-2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3">
           <code className="text-sm text-brand-500 flex-1">{installCmd}</code>
-          <CopyButton text={installCmd} />
+          <CopyButtonWithTracking text={installCmd} pluginName={plugin.name} />
         </div>
 
         {/* External Links */}

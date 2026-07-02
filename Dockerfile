@@ -9,7 +9,7 @@ RUN cd web && npm ci
 # 拷贝整个项目（plugins、scripts、web 等）
 COPY . .
 
-# 生成 registry.json（读取 plugins 和 marketplace.json，输出到 web/src/lib/）
+# 生成 registry.json
 RUN node scripts/generate-registry.mjs
 
 # 构建 Next.js
@@ -21,10 +21,15 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV DATA_DIR=/app/data
+ENV UPLOAD_DIR=/app/uploads
 
-# standalone 输出：server.js 在根目录，static 需要放到 .next/static
+# standalone 输出
 COPY --from=builder /app/web/.next/standalone ./
 COPY --from=builder /app/web/.next/static ./.next/static
+
+# 创建数据目录
+RUN mkdir -p /app/data /app/uploads
 
 EXPOSE ${PORT}
 CMD ["node", "server.js"]

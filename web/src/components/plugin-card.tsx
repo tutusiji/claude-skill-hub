@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Package, Tag, FileCode, User, Shield } from 'lucide-react';
+import { Package, Tag, FileCode, User, Shield, Download, Flame } from 'lucide-react';
 import type { Plugin, ViewMode } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -7,9 +7,11 @@ import { cn } from '@/lib/utils';
 interface PluginCardProps {
   plugin: Plugin;
   view?: ViewMode;
+  downloadCount?: number;
+  isHot?: boolean;
 }
 
-export function PluginCard({ plugin, view = 'grid' }: PluginCardProps) {
+export function PluginCard({ plugin, view = 'grid', downloadCount = 0, isHot = false }: PluginCardProps) {
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
   const skillCount = plugin.skills?.length || 0;
 
@@ -24,6 +26,7 @@ export function PluginCard({ plugin, view = 'grid' }: PluginCardProps) {
           <h3 className="font-semibold text-sm group-hover:text-brand-500 transition-colors truncate">
             {plugin.name}
           </h3>
+          {isHot && <Flame className="w-3.5 h-3.5 text-orange-500 shrink-0" />}
         </div>
         <p className="text-xs text-[var(--muted)] flex-1 line-clamp-1">
           {plugin.description}
@@ -39,10 +42,10 @@ export function PluginCard({ plugin, view = 'grid' }: PluginCardProps) {
               {skillCount}
             </span>
           )}
-          {plugin.author?.name && (
+          {downloadCount > 0 && (
             <span className="inline-flex items-center gap-1 text-xs text-[var(--muted)]">
-              <User className="w-3 h-3" />
-              {plugin.author.name}
+              <Download className="w-3 h-3" />
+              {downloadCount}
             </span>
           )}
           <span className="text-xs text-[var(--muted)] font-mono">v{plugin.version}</span>
@@ -52,7 +55,13 @@ export function PluginCard({ plugin, view = 'grid' }: PluginCardProps) {
   }
 
   return (
-    <Link href={`/plugins/${plugin.name}`} className="card p-5 block group">
+    <Link href={`/plugins/${plugin.name}`} className="card p-5 block group relative">
+      {isHot && (
+        <div className="absolute -top-2 -right-2 flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-500 text-xs font-medium border border-orange-500/30">
+          <Flame className="w-3 h-3" />
+          HOT
+        </div>
+      )}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-brand-500 shrink-0" />
@@ -77,6 +86,12 @@ export function PluginCard({ plugin, view = 'grid' }: PluginCardProps) {
           <span className="inline-flex items-center gap-1 text-xs text-[var(--muted)]">
             <FileCode className="w-3 h-3" />
             {skillCount} 技能
+          </span>
+        )}
+        {downloadCount > 0 && (
+          <span className="inline-flex items-center gap-1 text-xs text-[var(--muted)]">
+            <Download className="w-3 h-3" />
+            {downloadCount}
           </span>
         )}
         {plugin.license && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { SearchBar } from '@/components/search-bar';
 import { CategoryFilter } from '@/components/category-filter';
 import { PluginCard } from '@/components/plugin-card';
@@ -14,7 +14,7 @@ import type { Plugin, SortOption, ViewMode } from '@/lib/types';
 
 const plugins = registry as Plugin[];
 
-// Collect top tags by frequency (static computation, no hook needed)
+// Collect top tags by frequency (static computation)
 const TOP_TAG_COUNT = 15;
 const allTags = (() => {
   const counts: Record<string, number> = {};
@@ -29,38 +29,65 @@ const allTags = (() => {
     .map(([tag]) => tag);
 })();
 
+interface StatsResponse {
+  stats: Record<string, number>;
+  topDownloads: Array<{ name: string; count: number }>;
+  statusMap: Record<string, boolean>;
+}
+
 export default function HomePage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [tag, setTag] = useState<string | null>(null);
   const [sort, setSort] = useState<SortOption>('default');
   const [view, setView] = useState<ViewMode>('grid');
+  const [statsData, setStatsData] = useState<StatsResponse | null>(null);
+
+  // Fetch stats on mount
+  useEffect(() => {
+    fetch('/api/stats')
+      .then((res) => res.json())
+      .then((data) => setStatsData(data))
+      .catch(() => {});
+  }, []);
+
+  // Filter out unpublished plugins
+  const visiblePlugins = useMemo(() => {
+    if (!statsData?.statusMap) return plugins;
+    return plugins.filter((p) => statsData.statusMap[p.name] !== false);
+  }, [statsData]);
 
   const allCategories = useMemo(
-    () => [...new Set(plugins.map((p) => p.category))].sort(),
-    []
+    () => [...new Set(visiblePlugins.map((p) => p.category))].sort(),
+    [visiblePlugins]
   );
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const p of plugins) {
+    for (const p of visiblePlugins) {
       counts[p.category] = (counts[p.category] || 0) + 1;
     }
     return counts;
-  }, []);
+  }, [visiblePlugins]);
 
   const tagCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const p of plugins) {
+    for (const p of visiblePlugins) {
       for (const k of p.keywords || []) {
         counts[k] = (counts[k] || 0) + 1;
       }
     }
     return counts;
-  }, []);
+  }, [visiblePlugins]);
+
+  // Top 3 hot plugins by download count
+  const hotNames = useMemo(() => {
+    if (!statsData?.topDownloads) return new Set<string>();
+    return new Set(statsData.topDownloads.slice(0, 3).map((p) => p.name));
+  }, [statsData]);
 
   const filtered = useMemo(() => {
-    let result = plugins.filter((p) => {
+    let result = visiblePlugins.filter((p) => {
       if (category && p.category !== category) return false;
       if (tag && !(p.keywords || []).includes(tag)) return false;
       if (!query) return true;
@@ -73,7 +100,6 @@ export default function HomePage() {
       );
     });
 
-    // Apply sorting
     switch (sort) {
       case 'name-asc':
         result = [...result].sort((a, b) => a.name.localeCompare(b.name));
@@ -93,27 +119,27 @@ export default function HomePage() {
     }
 
     return result;
-  }, [query, category, tag, sort]);
+  }, [query, category, tag, sort, visiblePlugins]);
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-8">
       {/* Stats Bar */}
       <div className="mb-8">
-        <StatsBar plugins={plugins} />
+        <StatsBar plugins={visiblePlugins} />
       </div>
 
       {/* Featured Section */}
       <div className="mb-8">
-        <FeaturedSection plugins={plugins} />
+        <FeaturedSection plugins={visiblePlugins} />
       </div>
 
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">插件市场</h1>
         <p className="text-sm text-[var(--muted)]">
-          {filtered.length === plugins.length
-            ? `${plugins.length} 个插件 — 浏览、搜索并安装到 Claude Code。`
-            : `${filtered.length} / ${plugins.length} 个插件匹配当前筛选条件。`}
+          {filtered.length === visiblePlugins.length
+            ? `${visiblePlugins.length} 个插件 — 浏览、搜索并安装到 Claude Code。`
+            : `${filtered.length} / ${visiblePlugins.length} 个插件匹配当前筛选条件。`}
         </p>
       </div>
 
@@ -148,13 +174,25 @@ export default function HomePage() {
       ) : view === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((plugin) => (
-            <PluginCard key={plugin.name} plugin={plugin} view="grid" />
+            <PluginCard
+              key={plugin.name}
+              plugin={plugin}
+              view="grid"
+              downloadCount={statsData?.stats?.[plugin.name] || 0}
+              isHot={hotNames.has(plugin.name)}
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((plugin) => (
-            <PluginCard key={plugin.name} plugin={plugin} view="list" />
+            <PluginCard
+              key={plugin.name}
+              plugin={plugin}
+              view="list"
+              downloadCount={statsData?.stats?.[plugin.name] || 0}
+              isHot={hotNames.has(plugin.name)}
+            />
           ))}
         </div>
       )}

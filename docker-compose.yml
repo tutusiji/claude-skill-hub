@@ -9,18 +9,14 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-
-  git-server:
-    build:
-      context: ./git-server
-      dockerfile: Dockerfile
-    container_name: skill-hub-git
-    ports:
-      - "7789:7789"
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=byd@123456
+      - DATA_DIR=/app/data
+      - UPLOAD_DIR=/app/uploads
     volumes:
-      # bare 仓库持久化，重建容器不丢数据
-      - git-data:/srv/git
-    restart: unless-stopped
+      - skill-hub-data:/app/data
+      - skill-hub-uploads:/app/uploads
 
 volumes:
-  git-data:
+  skill-hub-data:
+  skill-hub-uploads:

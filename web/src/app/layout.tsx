@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { Wrench } from 'lucide-react';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -29,6 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/guide" className="hover:text-[var(--foreground)] transition-colors">使用指南</Link>
               <Link href="/" className="hover:text-[var(--foreground)] transition-colors">浏览插件</Link>
               <Link href="/contribute" className="hover:text-[var(--foreground)] transition-colors">贡献指南</Link>
+              <Link href="/admin" className="flex items-center gap-1 hover:text-[var(--foreground)] transition-colors" title="管理后台">
+                <Wrench className="w-3.5 h-3.5" />
+              </Link>
               <ThemeToggle />
             </nav>
           </div>
