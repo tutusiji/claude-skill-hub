@@ -59,3 +59,45 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: var(--hover-border);
 }
+
+/* Custom scrollbar — file tree & vertical scroll areas */
+.scrollbar-custom {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.scrollbar-custom::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 3px;
+  transition: background-color 0.15s;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background-color: var(--hover-border);
+}
+
+/* Global page scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 4px;
+  border: 2px solid var(--background);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--hover-border);
+}
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--background);
+}

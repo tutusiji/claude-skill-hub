@@ -81,7 +81,9 @@ export function PluginSidebar({
             <Loader2 className="w-4 h-4 animate-spin text-[var(--muted)]" />
           </div>
         ) : tree && tree.length > 0 ? (
-          <FileTree tree={tree} />
+          <div className="max-h-[400px] overflow-y-auto scrollbar-custom -mr-2 pr-2">
+            <FileTree tree={tree} />
+          </div>
         ) : (
           <p className="text-xs text-[var(--muted)] text-center py-3">文件信息不可用</p>
         )}
