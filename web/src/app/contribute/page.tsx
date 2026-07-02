@@ -137,17 +137,16 @@ export default function ContributePage() {
       <div className="space-y-6 mb-8">
         <Step num={1} icon={Terminal} title="创建插件目录">
           <p className="text-sm text-[var(--muted)] mb-3">
-            在 <code className="text-brand-500">plugins/</code> 下创建目录，结构如下：
+            在本地创建插件目录，结构如下：
           </p>
-          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`plugins/
-  my-plugin/
-    .claude-plugin/
-      plugin.json        # 必需 — 插件清单
-    skills/
-      my-skill/
-        SKILL.md          # 技能定义
-    commands/             # 可选
-      my-command.md`}</code></pre>
+          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`my-plugin/
+  .claude-plugin/
+    plugin.json        # 必需 — 插件清单
+  skills/
+    my-skill/
+      SKILL.md          # 技能定义
+  commands/             # 可选
+    my-command.md`}</code></pre>
         </Step>
 
         <Step num={2} icon={FileCode} title="编写 plugin.json">
@@ -181,9 +180,23 @@ description: 技能描述 — 什么场景下使用
         </Step>
 
         <Step num={4} icon={Upload} title="打包上传">
-          <p className="text-sm text-[var(--muted)]">
-            将整个插件目录打包为 <code className="text-brand-500">.zip</code> 文件，通过下方表单上传提交。
-            建议先点击"验证"检查插件结构，验证通过后再提交审核。
+          <p className="text-sm text-[var(--muted)] mb-3">
+            将整个插件目录打包为 <code className="text-brand-500">.zip</code> 文件后通过下方表单上传。
+          </p>
+          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`# 在插件目录的上级目录执行
+zip -r my-plugin.zip my-plugin/
+
+# 或使用 tar.gz
+tar -czf my-plugin.tar.gz my-plugin/
+
+# ZIP 内部结构应为：
+# my-plugin.zip
+#   └── my-plugin/
+#         ├── .claude-plugin/plugin.json
+#         ├── skills/...
+#         └── commands/...  (可选)`}</code></pre>
+          <p className="text-xs text-[var(--muted)] mt-2">
+            建议先点击"上传前验证"检查插件结构，验证通过后再提交审核。
           </p>
         </Step>
 
