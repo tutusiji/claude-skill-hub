@@ -432,7 +432,7 @@ description: 技能描述 — 什么场景下使用
           transition: border-color 0.15s;
         }
         :global(.form-input:focus) {
-          border-color: var(--brand-500, #6366f1);
+          border-color: var(--brand-500, #ea9518);
         }
         :global(.form-input::placeholder) {
           color: var(--muted);
