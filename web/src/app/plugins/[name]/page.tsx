@@ -3,25 +3,40 @@ import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shi
 import Link from 'next/link';
 import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import registry from '@/lib/registry.json';
+import { getPublishedPlugins } from '@/lib/published-plugins';
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
 
-const plugins = registry as Plugin[];
+const staticPlugins = registry as Plugin[];
 
 export function generateStaticParams() {
-  return plugins.map((p) => ({ name: p.name }));
+  return staticPlugins.map((p) => ({ name: p.name }));
 }
+
+export const dynamicParams = true;
 
 export default async function PluginDetailPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
-  const plugin = plugins.find((p) => p.name === name);
+
+  // 1. Check static registry
+  let plugin: Plugin | undefined = staticPlugins.find((p) => p.name === name);
+
+  // 2. Fallback: check dynamically published plugins
+  if (!plugin) {
+    const published = getPublishedPlugins();
+    plugin = published.find((p) => p.name === name);
+  }
+
   if (!plugin) notFound();
 
   const installCmd = `/plugin install ${plugin.name}@internal-skill-hub`;
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 
   // Related plugins: same category, exclude self, limit to 3
-  const related = plugins
+  const allPlugins = [...staticPlugins, ...getPublishedPlugins().filter(
+    (p) => !staticPlugins.some((s) => s.name === p.name)
+  )];
+  const related = allPlugins
     .filter((p) => p.category === plugin.category && p.name !== plugin.name)
     .slice(0, 3);
 

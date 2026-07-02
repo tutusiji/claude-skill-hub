@@ -12,22 +12,9 @@ import { TagFilter } from '@/components/tag-filter';
 import registry from '@/lib/registry.json';
 import type { Plugin, SortOption, ViewMode } from '@/lib/types';
 
-const plugins = registry as Plugin[];
+const staticPlugins = registry as Plugin[];
 
-// Collect top tags by frequency (static computation)
 const TOP_TAG_COUNT = 15;
-const allTags = (() => {
-  const counts: Record<string, number> = {};
-  for (const p of plugins) {
-    for (const k of p.keywords || []) {
-      counts[k] = (counts[k] || 0) + 1;
-    }
-  }
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, TOP_TAG_COUNT)
-    .map(([tag]) => tag);
-})();
 
 interface StatsResponse {
   stats: Record<string, number>;
@@ -42,20 +29,45 @@ export default function HomePage() {
   const [sort, setSort] = useState<SortOption>('default');
   const [view, setView] = useState<ViewMode>('grid');
   const [statsData, setStatsData] = useState<StatsResponse | null>(null);
+  const [publishedPlugins, setPublishedPlugins] = useState<Plugin[]>([]);
 
-  // Fetch stats on mount
+  // Fetch stats + published plugins on mount
   useEffect(() => {
     fetch('/api/stats')
       .then((res) => res.json())
       .then((data) => setStatsData(data))
       .catch(() => {});
+    fetch('/api/published-plugins')
+      .then((res) => res.json())
+      .then((data) => setPublishedPlugins(data.plugins || []))
+      .catch(() => {});
   }, []);
+
+  // Merge static registry + dynamically published plugins
+  const allPlugins = useMemo(() => {
+    const existingNames = new Set(staticPlugins.map((p) => p.name));
+    return [...staticPlugins, ...publishedPlugins.filter((p) => !existingNames.has(p.name))];
+  }, [publishedPlugins]);
+
+  // Collect top tags by frequency
+  const allTags = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of allPlugins) {
+      for (const k of p.keywords || []) {
+        counts[k] = (counts[k] || 0) + 1;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, TOP_TAG_COUNT)
+      .map(([tag]) => tag);
+  }, [allPlugins]);
 
   // Filter out unpublished plugins
   const visiblePlugins = useMemo(() => {
-    if (!statsData?.statusMap) return plugins;
-    return plugins.filter((p) => statsData.statusMap[p.name] !== false);
-  }, [statsData]);
+    if (!statsData?.statusMap) return allPlugins;
+    return allPlugins.filter((p) => statsData.statusMap[p.name] !== false);
+  }, [statsData, allPlugins]);
 
   const allCategories = useMemo(
     () => [...new Set(visiblePlugins.map((p) => p.category))].sort(),

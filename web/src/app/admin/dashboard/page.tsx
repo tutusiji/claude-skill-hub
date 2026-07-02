@@ -7,6 +7,7 @@ import {
   Wrench, LogOut, Download, CheckCircle, XCircle, Clock,
   Package, TrendingUp, Activity, EyeOff, Eye, ArrowLeft, RefreshCw,
   ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ChevronDown, ChevronUp,
+  Trash2, Rocket,
 } from 'lucide-react';
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
@@ -23,7 +24,7 @@ interface Submission {
   department: string;
   description: string;
   filename: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'published';
   createdAt: string;
 }
 
@@ -56,6 +57,7 @@ export default function AdminDashboard() {
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -91,13 +93,58 @@ export default function AdminDashboard() {
 
   const handleStatusUpdate = async (id: string, status: 'approved' | 'rejected') => {
     setActionLoading(id);
+    setActionMessage(null);
     try {
-      await fetch(`/api/admin/submissions/${id}`, {
+      const res = await fetch(`/api/admin/submissions/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      await fetchData();
+      const data = await res.json();
+      if (res.ok) {
+        await fetchData();
+      } else {
+        setActionMessage({ type: 'error', text: data.error || '操作失败' });
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePublish = async (id: string) => {
+    setActionLoading(`publish_${id}`);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}/publish`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMessage({ type: 'success', text: `插件「${data.plugin?.name || ''}」已上架成功` });
+        await fetchData();
+      } else {
+        setActionMessage({ type: 'error', text: data.error || '上架失败' });
+      }
+    } catch {
+      setActionMessage({ type: 'error', text: '网络错误' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('确定要删除这条提交记录吗？上传的文件也会一并删除。')) return;
+    setActionLoading(`delete_${id}`);
+    setActionMessage(null);
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        setActionMessage({ type: 'success', text: '提交记录已删除' });
+        await fetchData();
+      } else {
+        setActionMessage({ type: 'error', text: data.error || '删除失败' });
+      }
+    } catch {
+      setActionMessage({ type: 'error', text: '网络错误' });
     } finally {
       setActionLoading(null);
     }
@@ -208,6 +255,23 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {/* Action Message */}
+        {actionMessage && (
+          <div className={`mb-4 flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm ${
+            actionMessage.type === 'success'
+              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+              : 'bg-red-500/10 text-red-500 border border-red-500/20'
+          }`}>
+            {actionMessage.type === 'success'
+              ? <CheckCircle className="w-4 h-4 shrink-0" />
+              : <XCircle className="w-4 h-4 shrink-0" />}
+            <span>{actionMessage.text}</span>
+            <button onClick={() => setActionMessage(null)} className="ml-auto text-xs opacity-50 hover:opacity-100">
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Content */}
         {loading ? (
           <div className="text-center py-20 text-[var(--muted)] text-sm">加载中...</div>
@@ -218,6 +282,8 @@ export default function AdminDashboard() {
                 submissions={submissions}
                 onDownload={handleDownload}
                 onStatusUpdate={handleStatusUpdate}
+                onPublish={handlePublish}
+                onDelete={handleDelete}
                 actionLoading={actionLoading}
                 onValidate={handleValidate}
                 validationResults={validationResults}
@@ -266,12 +332,14 @@ function TabButton({
 
 // ─── Submissions Tab ───────────────────────────────────────
 function SubmissionsTab({
-  submissions, onDownload, onStatusUpdate, actionLoading,
+  submissions, onDownload, onStatusUpdate, onPublish, onDelete, actionLoading,
   onValidate, validationResults, validatingIds, expandedValidations, toggleValidationExpand,
 }: {
   submissions: Submission[];
   onDownload: (id: string) => void;
   onStatusUpdate: (id: string, status: 'approved' | 'rejected') => void;
+  onPublish: (id: string) => void;
+  onDelete: (id: string) => void;
   actionLoading: string | null;
   onValidate: (id: string) => void;
   validationResults: Record<string, ValidationResult>;
@@ -294,12 +362,13 @@ function SubmissionsTab({
         const vr = validationResults[sub.id];
         const isValidating = validatingIds.has(sub.id);
         const isExpanded = expandedValidations.has(sub.id);
+        const canPublish = vr?.passed && sub.status !== 'published';
 
         return (
           <div key={sub.id} className="card p-4">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-semibold text-sm">{sub.name}</h3>
                   <StatusBadge status={sub.status} />
                   {vr && (
@@ -384,7 +453,8 @@ function SubmissionsTab({
               </div>
             )}
 
-            <div className="flex items-center gap-2">
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => onDownload(sub.id)}
                 className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
@@ -403,6 +473,31 @@ function SubmissionsTab({
                   <><ShieldCheck className="w-3.5 h-3.5" /> 验证</>
                 )}
               </button>
+
+              {/* 上架按钮：验证通过且未上架时显示 */}
+              {canPublish && (
+                <button
+                  onClick={() => onPublish(sub.id)}
+                  disabled={actionLoading === `publish_${sub.id}`}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {actionLoading === `publish_${sub.id}` ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 上架中...</>
+                  ) : (
+                    <><Rocket className="w-3.5 h-3.5" /> 上架</>
+                  )}
+                </button>
+              )}
+
+              {/* 已上架标记 */}
+              {sub.status === 'published' && (
+                <span className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-emerald-500 bg-emerald-500/10 rounded-lg">
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  已上架
+                </span>
+              )}
+
+              {/* 通过/拒绝：pending 状态显示 */}
               {sub.status === 'pending' && (
                 <>
                   <button
@@ -423,6 +518,19 @@ function SubmissionsTab({
                   </button>
                 </>
               )}
+
+              {/* 删除按钮：始终显示，靠右 */}
+              <button
+                onClick={() => onDelete(sub.id)}
+                disabled={actionLoading === `delete_${sub.id}`}
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50 ml-auto"
+              >
+                {actionLoading === `delete_${sub.id}` ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /></>
+                ) : (
+                  <><Trash2 className="w-3.5 h-3.5" /> 删除</>
+                )}
+              </button>
             </div>
           </div>
         );
@@ -567,6 +675,7 @@ function StatusBadge({ status }: { status: Submission['status'] }) {
     pending: { label: '待审核', cls: 'bg-amber-500/10 text-amber-500' },
     approved: { label: '已通过', cls: 'bg-emerald-500/10 text-emerald-500' },
     rejected: { label: '已拒绝', cls: 'bg-red-500/10 text-red-500' },
+    published: { label: '已上架', cls: 'bg-brand-500/10 text-brand-500' },
   };
   const { label, cls } = config[status];
   return <span className={`text-xs px-2 py-0.5 rounded-full ${cls}`}>{label}</span>;
