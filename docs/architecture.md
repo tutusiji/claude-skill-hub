@@ -292,7 +292,7 @@ layout.tsx (全局布局: header + footer + 主题切换)
 
 ```bash
 # 内网环境添加 Skill Hub marketplace
-claude plugin marketplace add https://joox.cc:7504/git/skill-hub.git
+claude plugin marketplace add https://joox.cc:7504/skill-hub.git
 ```
 
 ### 安装插件
