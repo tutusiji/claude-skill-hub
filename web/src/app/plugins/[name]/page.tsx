@@ -34,7 +34,8 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
   // 根据类型生成不同的安装命令
   const isSkillPack = plugin.type === 'skills';
   const installCmd = `claude plugin install ${plugin.name}@skill-hub`;
-  const marketplaceCmd = `claude plugin marketplace add https://joox.cc:7504/skill-hub.git`;
+  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'https://joox.cc:7504/skill-hub.git';
+  const marketplaceCmd = `claude plugin marketplace add ${marketplaceUrl}`;
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 
   // Get download count

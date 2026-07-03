@@ -1,5 +1,7 @@
-import { BookOpen, Download, Terminal, Zap, Layers, GitBranch, FileCode, Workflow } from 'lucide-react';
+import { BookOpen, Download, Terminal, Zap, Layers, GitBranch, FileCode, Workflow, Server, Network, Globe } from 'lucide-react';
 import Link from 'next/link';
+
+const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'https://joox.cc:7504/skill-hub.git';
 
 export default function GuidePage() {
   return (
@@ -25,7 +27,7 @@ export default function GuidePage() {
       </Section>
 
       {/* 安装 */}
-      <Section icon={Download} title="安装">
+      <Section icon={Download} title="安装 Claude Code">
         <p className="text-sm text-[var(--muted)] mb-3">在终端执行以下命令安装：</p>
         <CodeBlock>{`# 安装 Claude Code
 npm install -g @anthropic-ai/claude-code
@@ -38,6 +40,67 @@ claude`}</CodeBlock>
         <p className="text-xs text-[var(--muted)] mt-3">
           前提条件：Node.js 18+，已安装 npm。如果内网无法直连，需要配置代理或使用离线安装包。
         </p>
+      </Section>
+
+      {/* 添加 Marketplace */}
+      <Section icon={Server} title="添加 Skill Hub 插件市场">
+        <p className="text-sm text-[var(--muted)] mb-4">
+          安装插件前，需要先添加 Skill Hub 作为插件市场。根据你的网络环境选择对应的地址：
+        </p>
+
+        <div className="overflow-x-auto mb-4">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[var(--border)]">
+                <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">环境</th>
+                <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">地址</th>
+                <th className="text-left py-2 font-medium text-[var(--muted)]">协议</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2 pr-4 flex items-center gap-1.5"><Globe className="w-3 h-3" />公网</td>
+                <td className="py-2 pr-4"><code className="text-brand-500">https://joox.cc:7504</code></td>
+                <td className="py-2 text-[var(--muted)]">HTTPS</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2 pr-4 flex items-center gap-1.5"><Network className="w-3 h-3" />内网</td>
+                <td className="py-2 pr-4"><code className="text-brand-500">http://10.9.43.61:7504</code></td>
+                <td className="py-2 text-[var(--muted)]">HTTP</td>
+              </tr>
+              <tr className="border-b border-[var(--border)]">
+                <td className="py-2 pr-4 flex items-center gap-1.5"><Server className="w-3 h-3" />开发</td>
+                <td className="py-2 pr-4"><code className="text-brand-500">http://115.190.193.230:7504</code></td>
+                <td className="py-2 text-[var(--muted)]">HTTP</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <SubStep title="添加 Marketplace">
+          <CodeBlock>{`# 公网环境
+claude plugin marketplace add https://joox.cc:7504/skill-hub.git
+
+# 内网环境
+claude plugin marketplace add http://10.9.43.61:7504/skill-hub.git
+
+# 开发环境
+claude plugin marketplace add http://115.190.193.230:7504/skill-hub.git`}</CodeBlock>
+          <p className="text-xs text-[var(--muted)] mt-2">
+            只需执行一次。添加后可通过 <code className="text-brand-500">claude plugin marketplace list</code> 查看。
+          </p>
+        </SubStep>
+
+        <SubStep title="安装插件">
+          <CodeBlock>{`# 安装指定插件
+claude plugin install code-review-skill@skill-hub
+
+# 查看已安装的插件
+claude plugin list
+
+# 更新 marketplace 缓存（上架新插件后执行）
+claude plugin marketplace update skill-hub`}</CodeBlock>
+        </SubStep>
       </Section>
 
       {/* 基本用法 */}
@@ -153,18 +216,14 @@ claude
         </p>
 
         <SubStep title="安装 Skill">
-          <CodeBlock>{`# 查看市场中的可用插件
-/plugin browse
+          <CodeBlock>{`# 1. 添加 marketplace（首次使用，只需一次）
+claude plugin marketplace add ${MARKETPLACE_URL}
 
-# 安装指定插件
-/plugin install docker-pro@internal-skill-hub
+# 2. 安装插件
+claude plugin install docker-pro@skill-hub
 
-# 查看已安装的插件
-/plugin list`}</CodeBlock>
-          <p className="text-xs text-[var(--muted)] mt-2">
-            内网环境下，将 Claude Code 的 marketplace 指向内部服务器即可：
-          </p>
-          <CodeBlock>{`claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git`}</CodeBlock>
+# 3. 查看已安装的插件
+claude plugin list`}</CodeBlock>
         </SubStep>
 
         <SubStep title="自动触发">
