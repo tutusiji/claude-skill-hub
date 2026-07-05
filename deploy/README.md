@@ -153,7 +153,7 @@ claude plugin marketplace add http://<server-ip>:7504/skill-hub.git
 | 变量 | 说明 | 示例 |
 |------|------|------|
 | `ADMIN_USERNAME` | 管理员用户名 | `admin` |
-| `ADMIN_PASSWORD` | 管理员密码 | `byd@123456` |
+| `ADMIN_PASSWORD` | 管理员密码 | `admin@123456` |
 | `JWT_SECRET` | JWT 签名密钥 | 随机字符串 |
 | `DATA_DIR` | 数据目录 | `/opt/skill-hub/data` |
 | `UPLOAD_DIR` | 上传目录 | `/opt/skill-hub/uploads` |

@@ -10,8 +10,8 @@ services:
     environment:
       - NODE_ENV=production
       - ADMIN_USERNAME=admin
-      # 内部使用:默认 byd@123456,可通过 .env 或宿主环境变量覆盖
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-byd@123456}
+      # 内部使用:默认 admin@123456,可通过 .env 或宿主环境变量覆盖
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin@123456}
       - DATA_DIR=/app/data
       - UPLOAD_DIR=/app/uploads
     volumes:
