@@ -97,3 +97,53 @@ export async function verifyAuth(): Promise<boolean> {
 }
 
 export const AUTH_COOKIE_NAME = COOKIE_NAME;
+
+// ─── Login Rate Limiting (in-memory, per-key) ────────────
+// 5 次失败后锁定 5 分钟。内存存储,进程重启即清空(内部系统可接受)。
+// key 优先用客户端 IP(经反向代理时有 x-forwarded-for);
+// 无代理时(Docker Compose 直连)回退到 username,仍能防护账号爆破。
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 5 * 60 * 1000;
+
+interface LoginAttempt {
+  count: number;
+  lockedUntil: number; // 0 = 未锁定;>0 = 锁定到该时间戳
+}
+const loginAttempts = new Map<string, LoginAttempt>();
+
+export function checkLoginRateLimit(key: string): { allowed: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  if (entry && entry.lockedUntil > now) {
+    return { allowed: false, retryAfterSec: Math.ceil((entry.lockedUntil - now) / 1000) };
+  }
+  return { allowed: true };
+}
+
+export function recordLoginFailure(key: string): void {
+  const now = Date.now();
+  const entry = loginAttempts.get(key);
+  let count: number;
+  if (!entry) {
+    count = 0;
+  } else if (entry.lockedUntil > now) {
+    // 仍处于锁定期 — 调用方应已拦截,防御性跳过
+    return;
+  } else if (entry.lockedUntil > 0) {
+    // 锁刚过期,重新计数
+    count = 0;
+  } else {
+    // 未锁定,累加
+    count = entry.count;
+  }
+  const newCount = count + 1;
+  if (newCount >= MAX_LOGIN_ATTEMPTS) {
+    loginAttempts.set(key, { count: newCount, lockedUntil: now + LOGIN_LOCKOUT_MS });
+  } else {
+    loginAttempts.set(key, { count: newCount, lockedUntil: 0 });
+  }
+}
+
+export function clearLoginAttempts(key: string): void {
+  loginAttempts.delete(key);
+}
