@@ -27,6 +27,8 @@ ENV UPLOAD_DIR=/app/uploads
 # standalone 输出
 COPY --from=builder /app/web/.next/standalone ./
 COPY --from=builder /app/web/.next/static ./.next/static
+# 静态插件文件(download-zip / filetree 路由按 STATIC_PLUGINS_DIR=/app/plugins 读取)
+COPY --from=builder /app/plugins ./plugins
 
 # 创建数据目录
 RUN mkdir -p /app/data /app/uploads

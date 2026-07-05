@@ -292,14 +292,14 @@ layout.tsx (全局布局: header + footer + 主题切换)
 
 ```bash
 # 内网环境添加 Skill Hub marketplace
-claude plugin marketplace add https://joox.cc:7504/skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git
 ```
 
 ### 安装插件
 
 ```bash
 # 通过 marketplace 安装（推荐）
-claude plugin install <plugin-name>@skill-hub
+claude plugin install <plugin-name>@internal-skill-hub
 ```
 
 ### 离线安装（下载 ZIP）
@@ -312,15 +312,13 @@ unzip <name>.zip -d ~/.claude/plugins/
 unzip <name>.zip -d /tmp/<name> && cp -r /tmp/<name>/skills/* ~/.claude/skills/
 ```
 
-> **架构说明**：marketplace 通过 Git smart HTTP 协议服务（fcgiwrap + git-http-backend）。
-> 发布/删除/编辑插件时自动同步到 bare Git 仓库（`/opt/skill-hub/repo/skill-hub.git`），
-> 用户无需手动操作。
+> **架构说明**：marketplace 由 `git-server` 容器提供（lighttpd + git-http-backend，Git smart HTTP 协议）。更新插件后执行 `git push internal main` 同步到 bare 仓库（`git-data` volume），用户即装即得。详见 [deploy.md](deploy.md)。
 
 ---
 
 ## 6. 安全设计
 
-### 5.1 密钥防护
+### 6.1 密钥防护
 
 | 层 | 机制 | 位置 |
 |----|------|------|
@@ -329,14 +327,17 @@ unzip <name>.zip -d /tmp/<name> && cp -r /tmp/<name>/skills/* ~/.claude/skills/
 
 扫描模式：API key 前缀 (sk-, AKIA, ghp_, gho_, ghs_)、RSA/EC 私钥头、高熵密码字符串。
 
-### 5.2 访问控制
+### 6.2 访问控制
 
-- 管理后台需登录（Cookie-based token 认证）
-- 上传文件大小限制 50MB（next.config.ts `serverActions.bodySizeLimit`）
+- 管理后台需登录（Cookie + **HMAC 签名 token**，密钥取 `AUTH_SECRET`，回退 `ADMIN_PASSWORD`）
+- **必须设置 `ADMIN_PASSWORD` 环境变量**，未配置时登录禁用
+- 登录限流：5 次失败后锁定 5 分钟（内存级，按 IP/username）
+- 上传大小限制 50MB（systemd+nginx 部署由 `client_max_body_size` 兜底；Docker Compose 无反向代理，需应用层校验）
 - 上传文件名重命名为 `<timestamp>-<original-name>` 防路径冲突
 - 管理端 API 均校验 `verifyAuth()`
+- 插件名校验防路径穿越（`getPluginDir` 拒绝 `..`/`/`/`\`，避免越权访问非插件目录）
 
-### 5.3 插件安全约束
+### 6.3 插件安全约束
 
 - 禁止包含硬编码密钥/令牌/凭证
 - 禁止外部网络调用（除非有文档说明）
@@ -345,42 +346,60 @@ unzip <name>.zip -d /tmp/<name> && cp -r /tmp/<name>/skills/* ~/.claude/skills/
 
 ---
 
-## 6. 部署架构
+## 7. 部署架构
 
-### 6.1 生产部署（systemd + nginx）
+### 7.1 Docker Compose 部署（推荐）
+
+两个容器，一键启动（完整步骤见 [deploy.md](deploy.md)）：
 
 ```
-浏览器 → nginx (HTTPS :7504) → Next.js standalone (:7788)
-                                        │
-                                        ├── /opt/skill-hub/data/     (数据目录)
-                                        └── /opt/skill-hub/uploads/  (上传目录)
+docker compose up -d
+        │
+        ├── web         :7788 → 容器:3000   Web UI（Next.js standalone）
+        └── git-server  :7789 → 容器:7789   Git HTTP Server（lighttpd + git-http-backend）
 ```
 
-- **systemd 服务**: `skill-hub.service`，运行 `node .next/standalone/server.js`
-- **nginx**: `/etc/nginx/conf.d/skill-hub-7504.conf`，SSL 证书 `/etc/nginx/ssl/joox.cc.pem`
-- **环境变量**: `DATA_DIR=/opt/skill-hub/data`、`UPLOAD_DIR=/opt/skill-hub/uploads`
+- **web** — Web UI + API（浏览/搜索/上传/管理后台）。`DATA_DIR`/`UPLOAD_DIR` 在容器内，建议挂载 volume 持久化
+- **git-server** — 给 Claude Code 用的 Git smart HTTP 服务，`claude plugin install` 时 git clone 此仓库；bare 仓库存于 `git-data` volume
 
-### 6.2 构建部署流程
+### 7.2 关键环境变量（web 容器）
+
+| 变量 | 作用 | 默认 |
+|------|------|------|
+| `DATA_DIR` | 运行时数据目录（submissions/published/stats） | `./data` |
+| `UPLOAD_DIR` | 上传文件目录 | `./uploads` |
+| `ADMIN_USERNAME` | 管理员用户名 | `admin` |
+| `ADMIN_PASSWORD` | 管理员密码（**必填**，否则登录禁用） | — |
+| `AUTH_SECRET` | token 签名密钥（可选，默认复用 `ADMIN_PASSWORD`） | — |
+| `SYNC_SCRIPT_PATH` | 发布/删除/编辑时调用的同步脚本 | `/root/projects/claude-skill-hub/scripts/sync-marketplace.sh` |
+| `NEXT_PUBLIC_MARKETPLACE_URL` | 详情页显示的 marketplace URL | `http://10.0.43.61:7789/git/skill-hub.git` |
+
+> **关于同步脚本**：`sync-marketplace.sh` 默认指向 systemd+nginx 部署的 `/opt/skill-hub` 布局。Docker Compose 部署下，git marketplace 通过 `git push internal main` 更新（见 deploy.md「更新插件后重新部署」）；如需发布动态插件时自动同步到 git-server 容器，改写该脚本并通过 `SYNC_SCRIPT_PATH` 指定。
+
+### 7.3 更新流程
 
 ```bash
-cd web
-npm run build
-cp -r .next/static .next/standalone/.next/static   # standalone 必须手动复制 static
-sudo systemctl restart skill-hub.service
+# 1. 推送代码到内部 git 仓库（git-server 提供）
+git push internal main
+
+# 2. 重建 Web UI（插件展示更新）
+docker compose up -d --build web
 ```
 
-⚠️ **不要在 production .next 目录上运行 `npm run dev`** — 会覆盖构建产物导致 JS chunk 404。
+### 7.4 旧式 systemd + nginx 部署（可选）
+
+如不使用 Docker Compose，也可用 systemd + nginx 直跑 standalone 构建：nginx 反代到 Next.js standalone（:7788），配置模板见 `deploy/nginx-*.conf`（含 `client_max_body_size 50m`）。此模式下 `SYNC_SCRIPT_PATH` 默认路径生效，发布动态插件时自动同步到 bare 仓库。
 
 ---
 
-## 7. 关键文件索引
+## 8. 关键文件索引
 
 | 文件 | 职责 |
 |------|------|
 | [web/src/lib/storage.ts](../web/src/lib/storage.ts) | 核心存储引擎：提交/发布/删除/统计 |
 | [web/src/lib/validator.ts](../web/src/lib/validator.ts) | 插件验证库：schema + 结构 + 密钥扫描 + 递归 findPluginRoot |
 | [web/src/lib/published-plugins.ts](../web/src/lib/published-plugins.ts) | 轻量级已发布插件读取器（服务端组件安全使用） |
-| [web/src/lib/auth.ts](../web/src/lib/auth.ts) | Cookie-based token 认证 |
+| [web/src/lib/auth.ts](../web/src/lib/auth.ts) | Cookie + HMAC token 认证 + 登录限流 |
 | [web/src/lib/types.ts](../web/src/lib/types.ts) | TypeScript 类型定义 |
 | [web/src/lib/registry.json](../web/src/lib/registry.json) | 静态插件数据（23 插件，42 技能） |
 | [web/src/app/page.tsx](../web/src/app/page.tsx) | 首页：静态 + 动态插件合并展示 |
@@ -390,5 +409,5 @@ sudo systemctl restart skill-hub.service
 | [web/src/app/api/contribute/route.ts](../web/src/app/api/contribute/route.ts) | 贡献上传 API |
 | [web/src/app/api/validate/route.ts](../web/src/app/api/validate/route.ts) | 上传前验证 API |
 | [web/src/app/api/admin/submissions/[id]/publish/route.ts](../web/src/app/api/admin/submissions/[id]/publish/route.ts) | 上架 API |
-| [web/next.config.ts](../web/next.config.ts) | standalone output + 50MB bodySizeLimit |
+| [web/next.config.ts](../web/next.config.ts) | standalone output |
 | [web/tailwind.config.ts](../web/tailwind.config.ts) | brand 橙色色板 |

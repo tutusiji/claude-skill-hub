@@ -10,7 +10,8 @@ services:
     environment:
       - NODE_ENV=production
       - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=byd@123456
+      # ADMIN_PASSWORD 必须通过 .env 或宿主环境变量设置;未设则 docker compose up 失败
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?请在 .env 或环境变量中设置 ADMIN_PASSWORD}
       - DATA_DIR=/app/data
       - UPLOAD_DIR=/app/uploads
     volumes:
