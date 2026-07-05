@@ -34,6 +34,19 @@ function syncMarketplace() {
 // ─── Plugin Directory Resolver ─────────────────────────────
 // 查找插件目录：先查已发布插件目录，再查静态插件目录
 export function getPluginDir(pluginName: string): string | null {
+  // 路径穿越防护:拒绝空、过长、含路径分隔符或纯点号的名字。
+  // `..` 会被 join 解析到上级目录,曾导致 /api/plugins/../download-zip 泄漏整个 data/ 目录。
+  // 不强制小写——纯 skill 包的 cleanName 可能含大写,只要不是穿越就放行。
+  if (
+    !pluginName ||
+    pluginName.length > 256 ||
+    pluginName === '.' ||
+    pluginName === '..' ||
+    /[\\/]/.test(pluginName) ||
+    pluginName.includes('\0')
+  ) {
+    return null;
+  }
   // 1. Published plugins (动态上架)
   const publishedPath = join(PUBLISHED_PLUGINS_DIR, pluginName);
   if (existsSync(publishedPath) && statSync(publishedPath).isDirectory()) {
