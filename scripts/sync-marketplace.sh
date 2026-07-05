@@ -1,15 +1,29 @@
 #!/bin/bash
 # sync-marketplace.sh — 将已发布插件同步到 Git marketplace 仓库
 # 用法: sync-marketplace.sh
-# 由 publishSubmission / deleteSubmission 调用
+# 由 publishSubmission / deleteSubmission / editPublishedPlugin 调用
+#
+# 可配置环境变量（均带生产默认值）：
+#   SKILL_HUB_ROOT     安装根目录        (默认 /opt/skill-hub)
+#   DATA_DIR           运行时数据目录     (默认 $SKILL_HUB_ROOT/data)
+#   PROJECT_ROOT       源码仓库目录       (默认 /root/projects/claude-skill-hub)
+#   STATIC_PLUGINS_DIR 静态插件目录       (默认 $PROJECT_ROOT/plugins)
 
 set -e
 
-WORKTREE="/opt/skill-hub/marketplace-worktree"
-BARE_REPO="/opt/skill-hub/repo/skill-hub.git"
-PUBLISHED_JSON="/opt/skill-hub/data/published-plugins.json"
-STATIC_PLUGINS_DIR="${STATIC_PLUGINS_DIR:-/root/projects/claude-skill-hub/plugins}"
-REGISTRY_JSON="/root/projects/claude-skill-hub/web/src/lib/registry.json"
+SKILL_HUB_ROOT="${SKILL_HUB_ROOT:-/opt/skill-hub}"
+DATA_DIR="${DATA_DIR:-$SKILL_HUB_ROOT/data}"
+PROJECT_ROOT="${PROJECT_ROOT:-/root/projects/claude-skill-hub}"
+
+WORKTREE="$SKILL_HUB_ROOT/marketplace-worktree"
+BARE_REPO="$SKILL_HUB_ROOT/repo/skill-hub.git"
+PUBLISHED_JSON="$DATA_DIR/published-plugins.json"
+PUBLISHED_PLUGINS_DIR="$DATA_DIR/plugins"
+STATIC_PLUGINS_DIR="${STATIC_PLUGINS_DIR:-$PROJECT_ROOT/plugins}"
+REGISTRY_JSON="$PROJECT_ROOT/web/src/lib/registry.json"
+
+# 导出供内嵌 python 读取
+export PUBLISHED_JSON PUBLISHED_PLUGINS_DIR REGISTRY_JSON WORKTREE
 
 cd "$WORKTREE"
 
@@ -17,7 +31,7 @@ cd "$WORKTREE"
 rm -rf plugins
 mkdir -p plugins
 
-# 2. 复制静态插件（来自 registry.json）
+# 2. 复制静态插件（来自源码仓库的 plugins/）
 if [ -d "$STATIC_PLUGINS_DIR" ]; then
   cp -r "$STATIC_PLUGINS_DIR"/* plugins/ 2>/dev/null || true
 fi
@@ -27,15 +41,17 @@ if [ -f "$PUBLISHED_JSON" ]; then
   python3 << 'PYEOF'
 import json, os, shutil
 
-PUBLISHED = "/opt/skill-hub/data/published-plugins.json"
-DEST = "/opt/skill-hub/marketplace-worktree/plugins"
+PUBLISHED = os.environ["PUBLISHED_JSON"]
+PUBLISHED_PLUGINS_DIR = os.environ["PUBLISHED_PLUGINS_DIR"]
+DEST = os.path.join(os.environ["WORKTREE"], "plugins")
 
 with open(PUBLISHED) as f:
     plugins = json.load(f)
 
 for p in plugins:
     name = p["name"]
-    src = p.get("extractedPath", "")
+    # 优先用 publishSubmission 记录的 extractedPath；缺失时回退到标准发布目录
+    src = p.get("extractedPath") or os.path.join(PUBLISHED_PLUGINS_DIR, name)
     if src and os.path.isdir(src):
         dest = os.path.join(DEST, name)
         if os.path.exists(dest):
@@ -51,10 +67,10 @@ fi
 python3 << 'PYEOF'
 import json, os
 
-REGISTRY = "/root/projects/claude-skill-hub/web/src/lib/registry.json"
-PUBLISHED = "/opt/skill-hub/data/published-plugins.json"
-PLUGINS_DIR = "/opt/skill-hub/marketplace-worktree/plugins"
-OUTPUT = "/opt/skill-hub/marketplace-worktree/.claude-plugin/marketplace.json"
+REGISTRY = os.environ["REGISTRY_JSON"]
+PUBLISHED = os.environ["PUBLISHED_JSON"]
+PLUGINS_DIR = os.path.join(os.environ["WORKTREE"], "plugins")
+OUTPUT = os.path.join(os.environ["WORKTREE"], ".claude-plugin", "marketplace.json")
 
 # 静态插件
 static_plugins = []
@@ -98,6 +114,7 @@ marketplace = {
     "plugins": marketplace_plugins,
 }
 
+os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
 with open(OUTPUT, "w") as f:
     json.dump(marketplace, f, ensure_ascii=False, indent=2)
 
@@ -107,11 +124,11 @@ PYEOF
 # 5. Git commit + push
 git add -A
 if git diff --cached --quiet; then
-    echo "no changes"
+  echo "no changes"
 else
-    git -c user.name="Skill Hub" -c user.email="bot@skill-hub" commit -m "sync: $(date '+%Y-%m-%d %H:%M:%S')"
-    git push origin main
-    echo "pushed to bare repo"
+  git -c user.name="Skill Hub" -c user.email="bot@skill-hub" commit -m "sync: $(date '+%Y-%m-%d %H:%M:%S')"
+  git push origin main
+  echo "pushed to bare repo"
 fi
 
 # 6. 更新 server-info（dumb HTTP fallback）

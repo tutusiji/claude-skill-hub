@@ -19,6 +19,18 @@ mkdirSync(DATA_DIR, { recursive: true });
 mkdirSync(UPLOAD_DIR, { recursive: true });
 mkdirSync(PUBLISHED_PLUGINS_DIR, { recursive: true });
 
+// ─── Marketplace Sync ─────────────────────────────────────
+// 同步脚本路径：可用 SYNC_SCRIPT_PATH 环境变量覆盖（默认为生产路径）。
+const SYNC_SCRIPT_PATH = process.env.SYNC_SCRIPT_PATH || '/root/projects/claude-skill-hub/scripts/sync-marketplace.sh';
+
+function syncMarketplace() {
+  try {
+    execSync(`bash "${SYNC_SCRIPT_PATH}"`, { timeout: 30000 });
+  } catch (e) {
+    console.error('marketplace sync failed:', e);
+  }
+}
+
 // ─── Plugin Directory Resolver ─────────────────────────────
 // 查找插件目录：先查已发布插件目录，再查静态插件目录
 export function getPluginDir(pluginName: string): string | null {
@@ -61,6 +73,9 @@ export interface PublishedPlugin extends Plugin {
   submissionId: string;
   publishedAt: string;
   contributor: { name: string; department: string };
+  // 已发布插件解压后的绝对路径，供 sync-marketplace.sh 定位文件复制。
+  // 未设置时同步脚本回退到 {DATA_DIR}/plugins/{name}。
+  extractedPath?: string;
 }
 
 export interface DownloadLogEntry {
@@ -154,11 +169,7 @@ export function deleteSubmission(id: string): { success: boolean; error?: string
       try { execSync(`rm -rf "${pluginDir}"`); } catch { /* ignore */ }
     }
     // Sync to Git marketplace repo
-    try {
-      execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
-    } catch (e) {
-      console.error('marketplace sync failed:', e);
-    }
+    syncMarketplace();
   }
 
   return { success: true };
@@ -266,6 +277,7 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
       commands: commands.length > 0 ? commands : undefined,
       homepage: m.homepage,
       license: m.license,
+      extractedPath: destDir,
       submissionId: id,
       publishedAt: new Date().toISOString(),
       contributor: { name: sub.name, department: sub.department },
@@ -279,11 +291,7 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
     updateSubmissionStatus(id, 'published');
 
     // Sync to Git marketplace repo (for claude plugin marketplace add)
-    try {
-      execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
-    } catch (e) {
-      console.error('marketplace sync failed:', e);
-    }
+    syncMarketplace();
 
     return { success: true, plugin };
   } catch (e) {
@@ -354,11 +362,7 @@ export function editPublishedPlugin(
   writeJSON(PUBLISHED_PLUGINS_FILE, published);
 
   // Sync to Git marketplace repo
-  try {
-    execSync('bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh', { timeout: 30000 });
-  } catch (e) {
-    console.error('marketplace sync failed:', e);
-  }
+  syncMarketplace();
 
   return { success: true };
 }
