@@ -13,7 +13,10 @@ export async function PATCH(
   const { id } = await params;
   const { status } = await request.json();
 
-  if (!['approved', 'rejected', 'published'].includes(status)) {
+  // PATCH 只用于审核决策(approved/rejected);'published' 必须走 POST /publish,
+  // 后者才会执行解压、写 published-plugins.json、同步 git marketplace 等副作用。
+  // 允许 PATCH 直接置 published 会造成"状态已发布但文件不存在"的脏状态。
+  if (!['approved', 'rejected'].includes(status)) {
     return NextResponse.json({ error: '无效状态' }, { status: 400 });
   }
 
