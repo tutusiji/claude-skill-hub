@@ -5,8 +5,8 @@ import { Wrench } from 'lucide-react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Skill Hub — 内部 Claude Code 技能市场',
-  description: '浏览、搜索并安装内部 Claude Code 技能和插件。',
+  title: 'Skill Hub — 内部 AI 编程工具插件市场',
+  description: '浏览、搜索并安装插件和技能 — 支持 Claude Code、Codex、Kimi Code、OpenCode、CodeWhale。',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <footer className="border-t border-[var(--border)] mt-16">
           <div className="max-w-7xl mx-auto px-6 py-6 text-sm text-[var(--muted)]">
-            内部 Claude Code 技能市场 — Platform Team
+            内部 AI 编程工具插件市场 — Platform Team
           </div>
         </footer>
       </body>

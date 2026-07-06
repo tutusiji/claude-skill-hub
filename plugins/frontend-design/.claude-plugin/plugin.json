@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "description": "前端颜值救星 — 让 Claude 写出符合专业设计规范的前端代码，后端开发者也能做出好看的界面。内置色彩搭配、间距系统、响应式布局规范。",
   "category": "developer-tools",
-  "keywords": ["frontend", "design", "ui", "css", "responsive", "design-system"],
-  "author": { "name": "Platform Team" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "frontend",
+    "design",
+    "ui",
+    "css",
+    "responsive",
+    "design-system"
+  ],
+  "author": {
+    "name": "Platform Team"
+  },
   "license": "MIT"
 }

@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "description": "Git 提交规范助手 — 自动生成符合 Conventional Commits 规范的中文提交信息，分析代码变更智能生成提交描述，支持多类型提交和范围标记。提交代码前使用。",
   "category": "developer-tools",
-  "keywords": ["git", "commit", "conventional-commits", "changelog", "version-control", "chinese"],
-  "author": { "name": "Platform Team" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "git",
+    "commit",
+    "conventional-commits",
+    "changelog",
+    "version-control",
+    "chinese"
+  ],
+  "author": {
+    "name": "Platform Team"
+  },
   "license": "MIT"
 }

@@ -150,7 +150,7 @@ export default function HomePage() {
         <h1 className="text-2xl font-bold mb-1">插件市场</h1>
         <p className="text-sm text-[var(--muted)]">
           {filtered.length === visiblePlugins.length
-            ? `${visiblePlugins.length} 个插件 — 浏览、搜索并安装到 Claude Code。`
+            ? `${visiblePlugins.length} 个插件 — 支持 Claude Code、Codex、Kimi Code、OpenCode、CodeWhale。`
             : `${filtered.length} / ${visiblePlugins.length} 个插件匹配当前筛选条件。`}
         </p>
       </div>

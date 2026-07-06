@@ -7,6 +7,16 @@ import {
   ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, XCircle, Tag,
 } from 'lucide-react';
 import { CATEGORIES, CATEGORY_LABELS } from '@/lib/types';
+import { TocNav } from '@/components/toc-nav';
+
+const SECTIONS = [
+  { id: 'create', title: '创建插件目录' },
+  { id: 'plugin-json', title: '编写 plugin.json' },
+  { id: 'skill-md', title: '编写 SKILL.md' },
+  { id: 'package', title: '打包上传' },
+  { id: 'review', title: '审核标准' },
+  { id: 'submit', title: '提交插件' },
+];
 
 interface ValidationResult {
   passed: boolean;
@@ -129,7 +139,15 @@ export default function ContributePage() {
   };
 
   return (
-    <main className="max-w-3xl mx-auto px-6 py-8">
+    <main className="max-w-5xl mx-auto px-6 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8">
+        {/* 左侧章节锚点 */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-20">
+            <TocNav items={SECTIONS} />
+          </div>
+        </aside>
+        <div className="min-w-0">
       <h1 className="text-2xl font-bold mb-2">贡献插件</h1>
       <p className="text-sm text-[var(--muted)] mb-8">
         按照以下规范开发你的插件，打包上传后由管理员审核上架。
@@ -137,12 +155,12 @@ export default function ContributePage() {
 
       {/* Development Guidelines */}
       <div className="space-y-6 mb-8">
-        <Step num={1} icon={Terminal} title="创建插件目录">
+        <Step id="create" num={1} icon={Terminal} title="创建插件目录">
           <p className="text-sm text-[var(--muted)] mb-3">
             在本地创建插件目录，结构如下：
           </p>
           <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`my-plugin/
-  .claude-plugin/
+  .plugin/
     plugin.json        # 必需 — 插件清单
   skills/
     my-skill/
@@ -151,13 +169,14 @@ export default function ContributePage() {
     my-command.md`}</code></pre>
         </Step>
 
-        <Step num={2} icon={FileCode} title="编写 plugin.json">
+        <Step id="plugin-json" num={2} icon={FileCode} title="编写 plugin.json（含 compatibility 字段）">
           <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`{
   "name": "my-plugin",
   "version": "1.0.0",
   "description": "插件描述，至少 10 个字符。",
   "category": "developer-tools",
   "keywords": ["automation", "testing"],
+  "compatibility": ["claude-code", "codex", "kimi-code", "opencode", "codewhale"],
   "author": { "name": "你的名字" },
   "homepage": "https://github.com/...",
   "license": "MIT"
@@ -167,7 +186,7 @@ export default function ContributePage() {
           </p>
         </Step>
 
-        <Step num={3} icon={CheckCircle} title="编写 SKILL.md">
+        <Step id="skill-md" num={3} icon={CheckCircle} title="编写 SKILL.md">
           <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`---
 name: my-skill
 description: 技能描述 — 什么场景下使用
@@ -181,7 +200,7 @@ description: 技能描述 — 什么场景下使用
           </p>
         </Step>
 
-        <Step num={4} icon={Upload} title="打包上传">
+        <Step id="package" num={4} icon={Upload} title="打包上传">
           <p className="text-sm text-[var(--muted)] mb-3">
             将整个插件目录打包为 <code className="text-brand-500">.zip</code> 文件后通过下方表单上传。
           </p>
@@ -194,7 +213,7 @@ tar -czf my-plugin.tar.gz my-plugin/
 # ZIP 内部结构应为：
 # my-plugin.zip
 #   └── my-plugin/
-#         ├── .claude-plugin/plugin.json
+#         ├── .plugin/plugin.json
 #         ├── skills/...
 #         └── commands/...  (可选)`}</code></pre>
           <p className="text-xs text-[var(--muted)] mt-2">
@@ -202,7 +221,7 @@ tar -czf my-plugin.tar.gz my-plugin/
           </p>
         </Step>
 
-        <div className="card p-5 border-l-2 border-yellow-500">
+        <div id="review" className="card p-5 border-l-2 border-yellow-500 scroll-mt-20">
           <div className="flex items-center gap-2 mb-2">
             <AlertTriangle className="w-4 h-4 text-yellow-500" />
             <h3 className="text-sm font-semibold">审核标准</h3>
@@ -218,7 +237,7 @@ tar -czf my-plugin.tar.gz my-plugin/
       </div>
 
       {/* Upload Form */}
-      <div className="card p-6">
+      <div id="submit" className="card p-6 scroll-mt-20">
         <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
           <GitPullRequest className="w-4 h-4 text-brand-500" />
           提交插件
@@ -468,18 +487,21 @@ tar -czf my-plugin.tar.gz my-plugin/
           color: var(--muted);
         }
       `}</style>
+        </div>
+      </div>
     </main>
   );
 }
 
-function Step({ num, icon: Icon, title, children }: {
+function Step({ id, num, icon: Icon, title, children }: {
+  id?: string;
   num: number;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="card p-5">
+    <div id={id} className="card p-5 scroll-mt-20">
       <div className="flex items-center gap-3 mb-4">
         <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-sm font-bold shrink-0">
           {num}

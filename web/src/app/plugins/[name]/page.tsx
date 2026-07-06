@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles, Flame, Layers } from 'lucide-react';
+import { ArrowLeft, Package, Tag, GitBranch, FileCode, ExternalLink, Github, Shield, User, Sparkles, Flame, Layers, Terminal } from 'lucide-react';
 import Link from 'next/link';
 import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import { PluginSidebar } from '@/components/plugin-sidebar';
@@ -7,7 +7,8 @@ import registry from '@/lib/registry.json';
 import { getPublishedPlugins } from '@/lib/published-plugins';
 import { getPluginStats } from '@/lib/storage';
 import type { Plugin } from '@/lib/types';
-import { CATEGORY_LABELS } from '@/lib/types';
+import { CATEGORY_LABELS, SUPPORTED_TOOLS, TOOL_MAP } from '@/lib/types';
+import { InstallCommands } from '@/components/install-commands';
 
 const staticPlugins = registry as Plugin[];
 
@@ -20,10 +21,8 @@ export const dynamicParams = true;
 export default async function PluginDetailPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
 
-  // 1. Check static registry
   let plugin: Plugin | undefined = staticPlugins.find((p) => p.name === name);
 
-  // 2. Fallback: check dynamically published plugins
   if (!plugin) {
     const published = getPublishedPlugins();
     plugin = published.find((p) => p.name === name);
@@ -31,18 +30,14 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
 
   if (!plugin) notFound();
 
-  // 根据类型生成不同的安装命令
-  const isSkillPack = plugin.type === 'skills';
-  const installCmd = `claude plugin install ${plugin.name}@skill-hub`;
-  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'https://joox.cc:7504/skill-hub.git';
-  const marketplaceCmd = `claude plugin marketplace add ${marketplaceUrl}`;
+  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.0.43.61:7789/git/skill-hub.git';
+  const marketplaceName = 'skill-hub';
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
+  const tools = plugin.compatibility || SUPPORTED_TOOLS.map((t) => t.id);
 
-  // Get download count
   const stats = getPluginStats();
   const downloadCount = stats[plugin.name] || 0;
 
-  // Related plugins: same category, exclude self, limit to 3
   const allPlugins = [...staticPlugins, ...getPublishedPlugins().filter(
     (p) => !staticPlugins.some((s) => s.name === p.name)
   )];
@@ -58,7 +53,6 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-        {/* ─── 主内容区 ─── */}
         <div className="space-y-6 min-w-0">
           {/* Plugin Header */}
           <div className="card p-6">
@@ -103,6 +97,23 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
               )}
             </div>
 
+            {/* Tool Compatibility Badges */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="text-xs text-[var(--muted)] flex items-center gap-1">
+                <Terminal className="w-3 h-3" />
+                兼容工具:
+              </span>
+              {tools.map((tid) => {
+                const tool = TOOL_MAP[tid];
+                if (!tool) return null;
+                return (
+                  <span key={tid} className="text-xs px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-500 border border-brand-500/20">
+                    {tool.name}
+                  </span>
+                );
+              })}
+            </div>
+
             {/* Keywords */}
             {plugin.keywords && plugin.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mb-4">
@@ -114,42 +125,12 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
               </div>
             )}
 
-            {/* Install Command */}
-            <div className="flex items-center gap-2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3">
-              <code className="text-sm text-brand-500 flex-1">{installCmd}</code>
-              <CopyButtonWithTracking text={installCmd} pluginName={plugin.name} />
-            </div>
-            <p className="text-xs text-[var(--muted)] mt-1.5">
-              首次使用需先添加 marketplace: <code className="text-brand-500">{marketplaceCmd}</code>
-            </p>
-
-            {/* External Links */}
-            {(plugin.homepage || plugin.repository) && (
-              <div className="flex items-center gap-3 mt-3">
-                {plugin.homepage && (
-                  <a
-                    href={plugin.homepage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-brand-500 transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    主页
-                  </a>
-                )}
-                {plugin.repository && (
-                  <a
-                    href={plugin.repository}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-brand-500 transition-colors"
-                  >
-                    <Github className="w-3 h-3" />
-                    仓库
-                  </a>
-                )}
-              </div>
-            )}
+            {/* Install Commands — 按工具适配 */}
+            <InstallCommands
+              plugin={plugin}
+              marketplaceName={marketplaceName}
+              marketplaceUrl={marketplaceUrl}
+            />
           </div>
 
           {/* Skills */}
@@ -220,7 +201,7 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
           )}
         </div>
 
-        {/* ─── 右侧边栏 ─── */}
+        {/* Sidebar */}
         <aside className="space-y-4 lg:sticky lg:top-6 lg:self-start">
           <PluginSidebar
             pluginName={plugin.name}

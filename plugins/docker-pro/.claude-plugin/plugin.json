@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "description": "Docker 全流程助手 — Dockerfile 编写规范、镜像优化、Compose 编排、容器调试。编写 Dockerfile、优化镜像大小或编排多容器服务时使用。",
   "category": "devops",
-  "keywords": ["docker", "dockerfile", "compose", "container", "image-optimization", "devops"],
-  "author": { "name": "Platform Team" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "docker",
+    "dockerfile",
+    "compose",
+    "container",
+    "image-optimization",
+    "devops"
+  ],
+  "author": {
+    "name": "Platform Team"
+  },
   "license": "MIT"
 }

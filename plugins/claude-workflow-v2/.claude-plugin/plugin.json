@@ -3,8 +3,24 @@
   "version": "1.0.0",
   "description": "通用工作流引擎 — 集成 agents、skills、hooks、commands 一体化。提供任务编排、多步骤自动化、事件驱动工作流。适合需要一站式增强的团队。",
   "category": "productivity",
-  "keywords": ["workflow", "automation", "orchestration", "agents", "hooks", "commands"],
-  "author": { "name": "CloudAI-X" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "workflow",
+    "automation",
+    "orchestration",
+    "agents",
+    "hooks",
+    "commands"
+  ],
+  "author": {
+    "name": "CloudAI-X"
+  },
   "homepage": "https://github.com/CloudAI-X/claude-workflow-v2",
   "license": "MIT"
 }

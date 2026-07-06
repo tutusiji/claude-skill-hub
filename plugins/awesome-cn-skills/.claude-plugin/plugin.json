@@ -3,8 +3,24 @@
   "version": "1.0.0",
   "description": "中文社区精选技能集 — 代码审查、API 设计、前端开发、数据库优化等场景化技能。中文文档，按场景分类，适合国内团队快速上手。",
   "category": "productivity",
-  "keywords": ["chinese", "code-review", "api-design", "frontend", "best-practices", "community"],
-  "author": { "name": "helloianneo" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "chinese",
+    "code-review",
+    "api-design",
+    "frontend",
+    "best-practices",
+    "community"
+  ],
+  "author": {
+    "name": "helloianneo"
+  },
   "homepage": "https://github.com/helloianneo/awesome-claude-code-skills",
   "license": "MIT"
 }

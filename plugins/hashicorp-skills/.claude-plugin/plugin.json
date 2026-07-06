@@ -3,8 +3,24 @@
   "version": "1.0.0",
   "description": "HashiCorp 产品技能集 — Terraform 基础设施编排、Vault 密钥管理、Consul 服务发现、Nomad 调度。HashiCorp 官方出品。",
   "category": "devops",
-  "keywords": ["terraform", "vault", "consul", "nomad", "infrastructure", "hashicorp"],
-  "author": { "name": "HashiCorp" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "terraform",
+    "vault",
+    "consul",
+    "nomad",
+    "infrastructure",
+    "hashicorp"
+  ],
+  "author": {
+    "name": "HashiCorp"
+  },
   "homepage": "https://github.com/hashicorp/agent-skills",
   "license": "MPL-2.0"
 }

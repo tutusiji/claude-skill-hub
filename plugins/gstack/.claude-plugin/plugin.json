@@ -3,6 +3,13 @@
   "version": "1.2.0",
   "description": "Garry Tan 的 Claude Code 技能套件 — 覆盖 CEO 规划、工程审查、设计评审、QA、安全审计、发布工程的 23 个工具。将 Claude Code 变成虚拟工程团队。",
   "category": "productivity",
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
   "keywords": [
     "gstack",
     "garry-tan",

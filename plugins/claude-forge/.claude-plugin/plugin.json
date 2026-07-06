@@ -3,8 +3,24 @@
   "version": "1.0.0",
   "description": "Claude Code 增强框架 — 11 个 AI 子代理、36 个 slash 命令、15 个技能。覆盖规划、编码、审查、测试、部署全流程。适合需要大量快捷命令的团队。",
   "category": "productivity",
-  "keywords": ["framework", "agents", "commands", "slash-commands", "planning", "deployment"],
-  "author": { "name": "sangrokjung" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "framework",
+    "agents",
+    "commands",
+    "slash-commands",
+    "planning",
+    "deployment"
+  ],
+  "author": {
+    "name": "sangrokjung"
+  },
   "homepage": "https://github.com/sangrokjung/claude-forge",
   "license": "MIT"
 }

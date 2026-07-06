@@ -5,6 +5,13 @@
     "source": "./plugins/code-review-skill",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "code-review",
       "quality",
@@ -26,6 +33,13 @@
     "source": "./plugins/gstack",
     "version": "1.2.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "gstack",
       "garry-tan",
@@ -84,6 +98,13 @@
     "source": "./plugins/superpowers",
     "version": "6.1.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "superpowers",
       "tdd",
@@ -136,6 +157,13 @@
     "source": "./plugins/socraticode",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "codebase-intelligence",
       "semantic-search",
@@ -168,6 +196,13 @@
     "source": "./plugins/hol-guard",
     "version": "1.0.0",
     "category": "security",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "security",
       "antivirus",
@@ -195,6 +230,13 @@
     "source": "./plugins/pg-aiguide",
     "version": "1.0.0",
     "category": "data",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "postgresql",
       "sql",
@@ -228,6 +270,13 @@
     "source": "./plugins/cc-skills-golang",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "golang",
       "go",
@@ -261,6 +310,13 @@
     "source": "./plugins/aws-skills",
     "version": "1.0.0",
     "category": "devops",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "aws",
       "cdk",
@@ -294,6 +350,13 @@
     "source": "./plugins/hashicorp-skills",
     "version": "1.0.0",
     "category": "devops",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "terraform",
       "vault",
@@ -322,6 +385,13 @@
     "source": "./plugins/claude-code-skills",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "agile",
       "code-review",
@@ -355,6 +425,13 @@
     "source": "./plugins/claude-workflow-v2",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "workflow",
       "automation",
@@ -383,6 +460,13 @@
     "source": "./plugins/claude-forge",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "framework",
       "agents",
@@ -411,6 +495,13 @@
     "source": "./plugins/awesome-cn-skills",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "chinese",
       "code-review",
@@ -444,6 +535,13 @@
     "source": "./plugins/pdf-tools",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "pdf",
       "ocr",
@@ -471,6 +569,13 @@
     "source": "./plugins/humanizer-zh",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "humanizer",
       "chinese",
@@ -498,6 +603,13 @@
     "source": "./plugins/planning-with-files",
     "version": "1.0.0",
     "category": "productivity",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "planning",
       "persistence",
@@ -524,6 +636,13 @@
     "source": "./plugins/frontend-design",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "frontend",
       "design",
@@ -551,6 +670,13 @@
     "source": "./plugins/code-review",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "code-review",
       "multi-agent",
@@ -579,6 +705,13 @@
     "source": "./plugins/skill-creator",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "skill",
       "creator",
@@ -607,6 +740,13 @@
     "source": "./plugins/git-commit-pro",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "git",
       "commit",
@@ -634,6 +774,13 @@
     "source": "./plugins/cn-docstring",
     "version": "1.0.0",
     "category": "developer-tools",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "docstring",
       "comment",
@@ -662,6 +809,13 @@
     "source": "./plugins/docker-pro",
     "version": "1.0.0",
     "category": "devops",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "docker",
       "dockerfile",
@@ -700,6 +854,13 @@
     "source": "./plugins/security-audit",
     "version": "1.0.0",
     "category": "security",
+    "compatibility": [
+      "claude-code",
+      "codex",
+      "kimi-code",
+      "opencode",
+      "codewhale"
+    ],
     "keywords": [
       "security",
       "audit",

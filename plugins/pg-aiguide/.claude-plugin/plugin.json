@@ -3,8 +3,24 @@
   "version": "1.0.0",
   "description": "PostgreSQL 开发助手 — 帮助 AI 生成更优 SQL、索引建议、查询优化、性能调优。MCP server + Claude plugin，适合后端团队。",
   "category": "data",
-  "keywords": ["postgresql", "sql", "database", "index", "query-optimization", "performance"],
-  "author": { "name": "Timescale" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "postgresql",
+    "sql",
+    "database",
+    "index",
+    "query-optimization",
+    "performance"
+  ],
+  "author": {
+    "name": "Timescale"
+  },
   "homepage": "https://github.com/timescale/pg-aiguide",
   "license": "Apache-2.0"
 }

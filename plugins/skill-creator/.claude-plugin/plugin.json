@@ -3,7 +3,23 @@
   "version": "1.0.0",
   "description": "压轴神器 — 让你自定义专属 Skill，将个人开发习惯和重复性工作封装成功能，彻底让 AI 适配你的需求。支持模板化创建、参数配置、自动注册。",
   "category": "developer-tools",
-  "keywords": ["skill", "creator", "custom", "template", "automation", "personalization"],
-  "author": { "name": "Platform Team" },
+  "compatibility": [
+    "claude-code",
+    "codex",
+    "kimi-code",
+    "opencode",
+    "codewhale"
+  ],
+  "keywords": [
+    "skill",
+    "creator",
+    "custom",
+    "template",
+    "automation",
+    "personalization"
+  ],
+  "author": {
+    "name": "Platform Team"
+  },
   "license": "MIT"
 }

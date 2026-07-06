@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Claude Code Plugin Manifest",
+  "title": "AI Coding Tool Plugin Manifest",
   "type": "object",
   "required": ["name", "version", "description", "category"],
   "properties": {
@@ -14,12 +14,23 @@
     "description": { "type": "string", "minLength": 10 },
     "category": { "type": "string" },
     "keywords": { "type": "array", "items": { "type": "string" } },
+    "compatibility": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["claude-code", "codex", "kimi-code", "opencode", "codewhale"]
+      },
+      "description": "支持的工具列表，省略则默认全部支持"
+    },
     "author": {
       "type": "object",
       "properties": {
         "name": { "type": "string" },
         "email": { "type": "string" }
       }
-    }
+    },
+    "homepage": { "type": "string" },
+    "repository": { "type": "string" },
+    "license": { "type": "string" }
   }
 }

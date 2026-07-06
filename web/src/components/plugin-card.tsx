@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Package, Tag, FileCode, User, Shield, Download, Flame } from 'lucide-react';
 import type { Plugin, ViewMode } from '@/lib/types';
-import { CATEGORY_LABELS } from '@/lib/types';
+import { CATEGORY_LABELS, SUPPORTED_TOOLS, TOOL_MAP } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 interface PluginCardProps {
@@ -11,9 +11,40 @@ interface PluginCardProps {
   isHot?: boolean;
 }
 
+// 工具名缩写映射，用于卡片上的紧凑显示
+const TOOL_SHORT: Record<string, string> = {
+  'claude-code': 'CC',
+  'codex': 'Codex',
+  'kimi-code': 'Kimi',
+  'opencode': 'OC',
+  'codewhale': 'CW',
+};
+
 export function PluginCard({ plugin, view = 'grid', downloadCount = 0, isHot = false }: PluginCardProps) {
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
   const skillCount = plugin.skills?.length || 0;
+  const tools = plugin.compatibility || SUPPORTED_TOOLS.map((t) => t.id);
+  const showAllTools = tools.length >= 5;
+
+  const ToolBadges = ({ className }: { className?: string }) => (
+    <span className={cn('inline-flex items-center gap-0.5', className)}>
+      {showAllTools ? (
+        <span className="text-xs text-[var(--muted)] px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)]">
+          全平台
+        </span>
+      ) : (
+        tools.map((tid) => (
+          <span
+            key={tid}
+            className="text-xs text-[var(--muted)] px-1.5 py-0.5 rounded bg-[var(--background)] border border-[var(--border)]"
+            title={TOOL_MAP[tid]?.name || tid}
+          >
+            {TOOL_SHORT[tid] || tid}
+          </span>
+        ))
+      )}
+    </span>
+  );
 
   if (view === 'list') {
     return (
@@ -32,6 +63,7 @@ export function PluginCard({ plugin, view = 'grid', downloadCount = 0, isHot = f
           {plugin.description}
         </p>
         <div className="flex items-center gap-3 shrink-0">
+          <ToolBadges />
           <span className="inline-flex items-center gap-1 text-xs text-[var(--muted)]">
             <Tag className="w-3 h-3" />
             {categoryLabel}
@@ -77,7 +109,7 @@ export function PluginCard({ plugin, view = 'grid', downloadCount = 0, isHot = f
       <p className="text-xs text-[var(--muted)] line-clamp-2 mb-3">
         {plugin.description}
       </p>
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="inline-flex items-center gap-1 text-xs text-[var(--muted)]">
           <Tag className="w-3 h-3" />
           {categoryLabel}
@@ -100,6 +132,9 @@ export function PluginCard({ plugin, view = 'grid', downloadCount = 0, isHot = f
             {plugin.license}
           </span>
         )}
+      </div>
+      <div className="mt-2 pt-2 border-t border-[var(--border)]">
+        <ToolBadges />
       </div>
     </Link>
   );
