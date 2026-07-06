@@ -6,7 +6,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Skill Hub — 内部 AI 编程工具插件市场',
-  description: '浏览、搜索并安装插件和技能 — 支持 Claude Code、Codex、Kimi Code、OpenCode、CodeWhale。',
+  description: '浏览、搜索并安装 Claude Code 插件与技能。',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

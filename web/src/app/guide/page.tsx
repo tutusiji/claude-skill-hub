@@ -178,18 +178,14 @@ export default function GuidePage() {
 
             <SubStep title="安装插件">
               <p className="text-sm text-[var(--muted)] mb-2">先添加内部 marketplace，再安装插件：</p>
-              <CodeBlock>{`# 添加 marketplace（所有工具通用）
-# Claude Code
+              <CodeBlock>{`# 添加 marketplace
 claude plugin marketplace add ${MARKETPLACE_URL}
 
-# Codex CLI
-codex config set marketplace ${MARKETPLACE_URL}
+# 安装插件
+claude plugin install <plugin-name>@skill-hub
 
-# Kimi Code
-kimi plugin marketplace add ${MARKETPLACE_URL}
-
-# 安装插件（按工具选择对应命令）
-# 详见各插件详情页的安装命令`}</CodeBlock>
+# 其他工具(Codex/Kimi/OpenCode/CodeWhale)请手动安装:
+# 下载插件包后放到对应工具的 skills 目录`}</CodeBlock>
             </SubStep>
 
             <SubStep title="自动触发">
