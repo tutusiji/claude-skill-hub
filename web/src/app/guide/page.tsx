@@ -46,21 +46,21 @@ export default function GuidePage() {
                   <tr className="border-b border-[var(--border)]">
                     <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">工具</th>
                     <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">厂商</th>
-                    <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">安装命令</th>
+                    <th className="text-left py-2 pr-4 font-medium text-[var(--muted)]">安装方式</th>
                     <th className="text-left py-2 font-medium text-[var(--muted)]">技能文件</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <ToolRow name="Claude Code" vendor="Anthropic" cmd="claude plugin install <name>@skill-hub" file="SKILL.md" />
-                  <ToolRow name="Codex CLI" vendor="OpenAI" cmd="codex --plugin <name>" file="AGENTS.md" />
-                  <ToolRow name="Kimi Code" vendor="Moonshot" cmd="kimi plugin install <name>@skill-hub" file="SKILL.md" />
-                  <ToolRow name="OpenCode" vendor="Open Source" cmd="opencode plugin add <name>" file="AGENTS.md" />
-                  <ToolRow name="CodeWhale" vendor="CodeWhale" cmd="codewhale plugin install <name>@skill-hub" file="SKILL.md" />
+                  <ToolRow name="Claude Code" vendor="Anthropic" method="claude plugin install <name>@skill-hub" isCommand file="SKILL.md" />
+                  <ToolRow name="Codex CLI" vendor="OpenAI" method="手动安装" file="AGENTS.md" />
+                  <ToolRow name="Kimi Code" vendor="Moonshot" method="手动安装" file="SKILL.md" />
+                  <ToolRow name="OpenCode" vendor="Open Source" method="手动安装" file="AGENTS.md" />
+                  <ToolRow name="CodeWhale" vendor="CodeWhale" method="手动安装" file="SKILL.md" />
                 </tbody>
               </table>
             </div>
             <p className="text-xs text-[var(--muted)] mt-3">
-              每个插件详情页会根据你使用的工具显示对应的安装命令。
+              插件详情页默认显示 Claude Code 安装命令;其他工具请手动安装 — 下载插件包后放到对应工具的 skills 目录。
             </p>
           </Section>
 
@@ -307,12 +307,14 @@ function CmdRow({ cmd, desc, scene }: { cmd: string; desc: string; scene: string
   );
 }
 
-function ToolRow({ name, vendor, cmd, file }: { name: string; vendor: string; cmd: string; file: string }) {
+function ToolRow({ name, vendor, method, isCommand, file }: { name: string; vendor: string; method: string; isCommand?: boolean; file: string }) {
   return (
     <tr className="border-b border-[var(--border)]">
       <td className="py-2 pr-4 text-[var(--foreground)] font-medium text-xs">{name}</td>
       <td className="py-2 pr-4 text-[var(--muted)] text-xs">{vendor}</td>
-      <td className="py-2 pr-4"><code className="text-brand-500 text-xs">{cmd}</code></td>
+      <td className="py-2 pr-4">
+        {isCommand ? <code className="text-brand-500 text-xs">{method}</code> : <span className="text-[var(--muted)] text-xs">{method}</span>}
+      </td>
       <td className="py-2 text-[var(--muted)] text-xs">{file}</td>
     </tr>
   );

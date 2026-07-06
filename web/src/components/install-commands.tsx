@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import type { Plugin } from '@/lib/types';
-import { SUPPORTED_TOOLS, TOOL_MAP } from '@/lib/types';
+import { SUPPORTED_TOOLS } from '@/lib/types';
 
 interface Props {
   plugin: Plugin;
@@ -11,46 +10,36 @@ interface Props {
   marketplaceUrl: string;
 }
 
+/**
+ * 安装命令:Claude Code 为主要支持路径,自动生成;其他工具手动适配。
+ * 详见使用指南(/guide)。
+ */
 export function InstallCommands({ plugin, marketplaceName, marketplaceUrl }: Props) {
-  const tools = plugin.compatibility || SUPPORTED_TOOLS.map((t) => t.id);
-  const [selectedTool, setSelectedTool] = useState(tools[0]);
+  const claude = SUPPORTED_TOOLS.find((t) => t.id === 'claude-code');
+  if (!claude) return null;
 
-  const tool = TOOL_MAP[selectedTool];
-  if (!tool) return null;
-
-  const installCmd = tool.installCmd(plugin.name, marketplaceName);
-  const mpCmd = tool.marketplaceCmd(marketplaceUrl);
+  const installCmd = claude.installCmd(plugin.name, marketplaceName);
+  const mpCmd = claude.marketplaceCmd(marketplaceUrl);
+  const otherTools = SUPPORTED_TOOLS
+    .filter((t) => t.id !== 'claude-code')
+    .map((t) => t.shortName)
+    .join(' / ');
 
   return (
     <div>
-      {/* 工具选择 tabs */}
-      <div className="flex items-center gap-1 mb-3 flex-wrap">
-        {tools.map((tid) => {
-          const t = TOOL_MAP[tid];
-          if (!t) return null;
-          return (
-            <button
-              key={tid}
-              onClick={() => setSelectedTool(tid)}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                selectedTool === tid
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-[var(--background)] text-[var(--muted)] hover:text-[var(--foreground)] border border-[var(--border)]'
-              }`}
-            >
-              {t.shortName}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* 安装命令 */}
+      {/* Claude Code 安装命令(自动) */}
       <div className="flex items-center gap-2 bg-[var(--background)] border border-[var(--border)] rounded-lg px-4 py-3">
         <code className="text-sm text-brand-500 flex-1 overflow-x-auto whitespace-nowrap">{installCmd}</code>
         <CopyButtonWithTracking text={installCmd} pluginName={plugin.name} />
       </div>
       <p className="text-xs text-[var(--muted)] mt-1.5">
         首次使用需先添加 marketplace: <code className="text-brand-500">{mpCmd}</code>
+      </p>
+
+      {/* 其他工具手动适配 */}
+      <p className="text-xs text-[var(--muted)] mt-2">
+        其他工具({otherTools}):请<a href="/guide" className="text-brand-500 hover:underline">手动安装</a>
+        {' '}— 下载插件包后放到对应工具的 skills 目录。
       </p>
     </div>
   );
