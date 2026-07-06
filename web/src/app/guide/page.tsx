@@ -2,7 +2,7 @@ import { BookOpen, Download, Terminal, Zap, Layers, GitBranch, FileCode, Workflo
 import Link from 'next/link';
 import { TocNav } from '@/components/toc-nav';
 
-const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.0.43.61:7789/skill-hub.git';
+const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.9.43.61:7789/skill-hub.git';
 
 const SECTIONS = [
   { id: 'tools', title: '支持的工具' },

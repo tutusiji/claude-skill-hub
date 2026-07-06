@@ -30,7 +30,7 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
 
   if (!plugin) notFound();
 
-  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.0.43.61:7789/skill-hub.git';
+  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.9.43.61:7789/skill-hub.git';
   const marketplaceName = 'skill-hub';
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 

@@ -2,7 +2,7 @@
 
 > 面向**无外网内网**（仅有内部 npm 镜像 + Docker Compose）的离线部署。
 > 构建机：huoshan 云 `115.190.193.230`（web 端口 `7504`；有外网；本机已配好 ssh，用别名登录）。
-> 部署机：内网 `10.0.43.61`（无外网；Web 端口 `7788`，Git marketplace 端口 `7789`）。
+> 部署机：内网 `10.9.43.61`（无外网；Web 端口 `7788`，Git marketplace 端口 `7789`）。
 >
 > 域名 `joox.cc:7504` 与 `115.190.193.230:7504` 是同一台 huoshan，**构建机/内网引用统一用 IP `115.190.193.230`**（公网 HTTPS 入口的证书仍是 `joox.cc` 域名，不在此次统一范围内）。
 
@@ -16,9 +16,9 @@
 |----|----------------|-------------|-----------|
 | 服务拓扑 | `docs/deploy.md` 写的是 `web`(:7788) + `git-server`(:7789) 两个容器 | `git-server` 容器已在 `f8aa05b 架构重构` 中移除，现在只有 `web` 一个容器 | 只部署 `web` 容器；git marketplace 走宿主机 nginx（见 §5） |
 | 离线镜像包 | `images/skill-hub-images.tar`（7/2 生成）含 `claude-skill-hub-git-server` 旧镜像 | **已过期**，含被删掉的 git-server 镜像 | **不要直接用**，按 §3 重新打包 |
-| 内网 IP | `deploy/README.md` / `web/.env.internal` / `nginx-internal.conf` 曾写 `10.9.43.61`（笔误） | 实际 `10.0.43.61` | 已全部修正 |
+| 内网 IP | 代码/README 旧写 `10.0.43.61`（错误，该 IP 不存在）；env/nginx 写 `10.9.43.61` | 实际内网服务器 `10.9.43.61` | 已统一为 `10.9.43.61` |
 | 端口 | `deploy/README.md`(host nginx 方式)用 `7504` 作 web/git 端口 | docker 方式 Web=`7788`、Git=`7789`；`7504` 是 huoshan 的 **web** 端口（非 SSH） | 本指南走 docker，用 7788/7789 |
-| marketplace URL | README/architecture 旧用 `/git/claude-skill-hub.git`，代码默认 `/git/skill-hub.git` | 已统一为 `http://10.0.43.61:7789/skill-hub.git`（去 `/git/`、名统一 `skill-hub`、留 `.git`） | 见 §5 |
+| marketplace URL | README/architecture 旧用 `/git/claude-skill-hub.git`，代码默认 `/git/skill-hub.git` | 已统一为 `http://10.9.43.61:7789/skill-hub.git`（去 `/git/`、名统一 `skill-hub`、留 `.git`） | 见 §5 |
 | 环境变量 | `docker-compose.yml` 只设了 5 个 | 代码还读 `AUTH_SECRET`/`SYNC_SCRIPT_PATH`/`NEXT_PUBLIC_MARKETPLACE_URL` | 在离线 compose 中补齐 |
 | `NEXT_PUBLIC_*` | 当作运行时变量 | **构建时**变量，运行时改不了 | 在构建机设置（§3/§4） |
 
@@ -28,7 +28,7 @@
 
 ```
 ┌──────────────────────────┐         ┌─────────────────────────────────┐
-│  huoshan 云（构建机）       │         │  内网 10.0.43.61（部署机）          │
+│  huoshan 云（构建机）       │         │  内网 10.9.43.61（部署机）          │
 │  115.190.193.230 web:7504 │         │  无外网 / 有内部 npm / 有 compose  │
 │  有外网 + Docker           │         │                                   │
 │                            │  传 tar │  ┌─────────────────────────────┐  │
@@ -60,7 +60,7 @@ git --version
 cd /root/projects/claude-skill-hub && git pull origin main   # 拉到最新
 ```
 
-**部署机内网 10.0.43.61：**
+**部署机内网 10.9.43.61：**
 ```bash
 docker version                             # Docker 引擎
 docker compose version                     # Docker Compose v2
@@ -83,10 +83,10 @@ curl -sI https://<内部npm镜像>/ 2>/dev/null || curl -sI http://<内部npm镜
 cd /root/projects/claude-skill-hub
 
 # （可选）构建时注入内网地址。NEXT_PUBLIC_* 是构建时变量，运行时改无效。
-# 代码默认 marketplace URL: http://10.0.43.61:7789/skill-hub.git — 不改可跳过。
+# 代码默认 marketplace URL: http://10.9.43.61:7789/skill-hub.git — 不改可跳过。
 # 若内网 IP/端口不同，在 Dockerfile builder 阶段加 ENV，例如：
-#   ENV NEXT_PUBLIC_APP_URL=http://10.0.43.61:7788
-#   ENV NEXT_PUBLIC_MARKETPLACE_URL=http://10.0.43.61:7789/skill-hub.git
+#   ENV NEXT_PUBLIC_APP_URL=http://10.9.43.61:7788
+#   ENV NEXT_PUBLIC_MARKETPLACE_URL=http://10.9.43.61:7789/skill-hub.git
 # （NEXT_PUBLIC_APP_URL 决定 /api/marketplace 里 download-zip 的来源，内网必须设成 7788）
 
 docker build -t claude-skill-hub-web:latest .
@@ -101,17 +101,17 @@ ls -lh skill-hub-web.tar.gz
 
 ```bash
 # 方式 1：huoshan 能直连内网时
-scp -P <内网ssh端口> skill-hub-web.tar.gz root@10.0.43.61:/opt/claude-skill-hub/
+scp -P <内网ssh端口> skill-hub-web.tar.gz root@10.9.43.61:/opt/claude-skill-hub/
 
 # 方式 2：huoshan 无法直连内网时，用本机中转
 #   本机:  scp huoshan:/root/projects/claude-skill-hub/skill-hub-web.tar.gz .   # 用你的 ssh 别名
-#   本机:  scp -P <内网ssh端口> skill-hub-web.tar.gz root@10.0.43.61:/opt/claude-skill-hub/
+#   本机:  scp -P <内网ssh端口> skill-hub-web.tar.gz root@10.9.43.61:/opt/claude-skill-hub/
 ```
 
 ### A3. 在内网导入镜像
 
 ```bash
-# === 在内网 10.0.43.61 上 ===
+# === 在内网 10.9.43.61 上 ===
 cd /opt/claude-skill-hub
 gunzip -c skill-hub-web.tar.gz | docker load
 # 等价: docker load -i skill-hub-web.tar
@@ -142,8 +142,8 @@ services:
       - STATIC_PLUGINS_DIR=/app/plugins
       # 注意：NEXT_PUBLIC_MARKETPLACE_URL 是构建时变量，写这里运行时不生效，
       # 仅作记录。实际值见 §3 A1 / §5。
-      - NEXT_PUBLIC_APP_URL=http://10.0.43.61:7788
-      - NEXT_PUBLIC_MARKETPLACE_URL=http://10.0.43.61:7789/skill-hub.git
+      - NEXT_PUBLIC_APP_URL=http://10.9.43.61:7788
+      - NEXT_PUBLIC_MARKETPLACE_URL=http://10.9.43.61:7789/skill-hub.git
       # 发布插件同步脚本（宿主路径）。容器内启用发布同步见 §5.3，否则留默认不会触发。
       - SYNC_SCRIPT_PATH=/app/scripts/sync-marketplace.sh
     volumes:
@@ -171,11 +171,11 @@ chmod 600 /opt/claude-skill-hub/.env
 cd /opt/claude-skill-hub
 docker compose -f docker-compose.offline.yml up -d
 docker compose -f docker-compose.offline.yml ps
-curl -sS http://10.0.43.61:7788 | grep -o '插件市场\|Skill Hub' | head -1   # 有输出即 Web 起来了
+curl -sS http://10.9.43.61:7788 | grep -o '插件市场\|Skill Hub' | head -1   # 有输出即 Web 起来了
 docker compose -f docker-compose.offline.yml logs --tail=50 web
 ```
 
-浏览器访问 `http://10.0.43.61:7788`，用 `admin` / 你设的密码登录。
+浏览器访问 `http://10.9.43.61:7788`，用 `admin` / 你设的密码登录。
 
 ---
 
@@ -192,7 +192,7 @@ docker save node:20-alpine -o node-20-alpine.tar
 gzip node-20-alpine.tar
 # 传到内网（同 §3 A2）
 
-# === 内网 10.0.43.61 上 ===
+# === 内网 10.9.43.61 上 ===
 gunzip -c node-20-alpine.tar.gz | docker load
 docker images | grep node                       # 确认 node   20-alpine
 ```
@@ -244,32 +244,29 @@ docker compose -f docker-compose.offline.yml up -d
 > Claude Code 的 `claude plugin marketplace add ... && claude plugin install <name>` 走的是 **Git 仓库**，由**宿主机** nginx + fcgiwrap 提供（不在 docker compose 里）。
 > 如果你暂时不需要 Claude Code 的 install 流程，可跳过本节，Web UI 本身能独立运行。
 
-### 5.1 两个 Git 仓库（先理清）
+### 5.1 两个 Git 仓库（先理清，别混淆）
 
-| 仓库 | 用途 | 内容 | 来源 |
-|------|------|------|------|
-| `claude-skill-hub.git` | **项目源码**（代码部署） | 整个项目源码 | `git push internal main` |
-| `skill-hub.git` | **marketplace**（Claude Code install） | 静态插件(23) + 动态发布插件 + `.claude-plugin/marketplace.json` | `scripts/sync-marketplace.sh` 同步生成 |
+| 仓库 | 是什么 | 托管在哪 |
+|------|--------|----------|
+| `claude-skill-hub.git` | **项目源码仓库**（开发用） | 项目自己的 git：`origin`(github) + `internal`(本机 localhost:7789)。**不在内网部署服务器上** |
+| `skill-hub.git` | **marketplace**（Claude Code install 用） | 内网部署服务器 `10.9.43.61:7789`，由 `scripts/sync-marketplace.sh` 同步生成 |
 
-> ⚠️ Claude Code 要 `marketplace add` 的是 **`skill-hub.git`**（含静态+动态全部插件），不是项目源码仓库 `claude-skill-hub.git`。README 旧写法指向 `claude-skill-hub.git` 是错的，已统一改为 `skill-hub.git`。
+> ⚠️ **内网部署服务器 `10.9.43.61` 和项目自己的 git 仓库是两回事。** Claude Code 要 `marketplace add` 的是内网上的 **`skill-hub.git`**（含静态+动态全部插件），不是项目源码仓库 `claude-skill-hub.git`。
 >
-> marketplace URL 统一为 `http://10.0.43.61:7789/skill-hub.git`（去掉 `/git/` 前缀、保留 `.git` 后缀、名字统一 `skill-hub`）。
+> marketplace URL 统一为 `http://10.9.43.61:7789/skill-hub.git`（去掉 `/git/` 前缀、保留 `.git` 后缀、名字统一 `skill-hub`）。
 
 ### 5.2 在内网宿主机搭 Git HTTP 服务（监听 7789，根路径直出）
 
 ```bash
-# === 内网 10.0.43.61 上 ===
+# === 内网 10.9.43.61 上 ===
 apt-get install -y nginx fcgiwrap git
 systemctl enable --now fcgiwrap.socket
 
-# 建两个 bare 仓库：项目源码 + marketplace
+# 建 marketplace bare 仓库（内网只放 marketplace，不放项目源码）
 mkdir -p /opt/skill-hub/repo
-git init --bare /opt/skill-hub/repo/claude-skill-hub.git   # 项目源码
-git init --bare /opt/skill-hub/repo/skill-hub.git          # marketplace
-for r in claude-skill-hub skill-hub; do
-  git -C /opt/skill-hub/repo/$r.git symbolic-ref HEAD refs/heads/main
-  git config --global --add safe.directory /opt/skill-hub/repo/$r.git
-done
+git init --bare /opt/skill-hub/repo/skill-hub.git
+git -C /opt/skill-hub/repo/skill-hub.git symbolic-ref HEAD refs/heads/main
+git config --global --add safe.directory /opt/skill-hub/repo/skill-hub.git
 
 # 权限（nginx 以 www-data 跑 git-http-backend）
 chown -R www-data:www-data /opt/skill-hub/repo
@@ -300,20 +297,15 @@ server {
 nginx -t && systemctl reload nginx
 ```
 
-> 这样 `http://10.0.43.61:7789/skill-hub.git` 与 `http://10.0.43.61:7789/claude-skill-hub.git` 都能直出访问。若沿用带 `/git/` 前缀的旧 nginx，URL 就要带 `/git/`，但本指南统一用根路径。
+> 这样 `http://10.9.43.61:7789/skill-hub.git` 能直出访问。若沿用带 `/git/` 前缀的旧 nginx，URL 就要带 `/git/`，但本指南统一用根路径。
 
-### 5.3 推代码 + 初始化 marketplace + 验证
+### 5.3 初始化 marketplace + 验证
 
 ```bash
-# 1) 把项目源码推到 internal 仓库（代码部署用）
-cd <你的 claude-skill-hub 仓库>
-# 已存在 internal remote 时改用: git remote set-url internal http://10.0.43.61:7789/claude-skill-hub.git
-git remote add internal http://10.0.43.61:7789/claude-skill-hub.git
-git push internal main
-
-# 2) 首次初始化 marketplace 仓库 skill-hub.git（在内网宿主机上）
+# 1) 首次初始化 marketplace 仓库 skill-hub.git（在内网部署服务器 10.9.43.61 上）
 #    sync-marketplace.sh 往 worktree 写 plugins/ + marketplace.json 并推到 bare 仓库
-#    前提：宿主机上有项目源码（PROJECT_ROOT），用来读静态插件 + registry
+#    前提：内网服务器上有项目源码（PROJECT_ROOT），用来读静态插件 + registry。
+#    内网无外网，项目源码从 huoshan 打 tar 传过来解压到 /root/projects/claude-skill-hub
 mkdir -p /opt/skill-hub/marketplace-worktree
 cd /opt/skill-hub/marketplace-worktree
 git init && git checkout -b main
@@ -322,14 +314,16 @@ SKILL_HUB_ROOT=/opt/skill-hub \
 PROJECT_ROOT=/root/projects/claude-skill-hub \
 bash /root/projects/claude-skill-hub/scripts/sync-marketplace.sh
 
-# 3) 验证 git smart HTTP 可用
-curl -s "http://10.0.43.61:7789/skill-hub.git/info/refs?service=git-upload-pack" | head -1
+# 2) 验证 git smart HTTP 可用
+curl -s "http://10.9.43.61:7789/skill-hub.git/info/refs?service=git-upload-pack" | head -1
 # 应输出: 001e# service=git-upload-pack
 
-# 4) 用户侧 Claude Code 接入
-claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git
+# 3) 用户侧 Claude Code 接入
+claude plugin marketplace add http://10.9.43.61:7789/skill-hub.git
 claude plugin install <plugin-name>@internal-skill-hub
 ```
+
+> 注：项目源码的版本管理走项目自己的 git（`origin`/`internal` remote），和这里的内网 marketplace 是两套东西。内网部署服务器的代码更新走 §3 的镜像 tar，不走 git push。
 
 ### 5.4 发布插件 → 同步到 marketplace（重要限制）
 
@@ -415,6 +409,6 @@ docker run --rm -v claude-skill-hub_skill-hub-data:/d \
 | `UPLOAD_DIR` | 上传文件目录 | 运行时 | `/app/uploads` |
 | `STATIC_PLUGINS_DIR` | 静态插件目录 | 运行时 | `plugins`（容器内即 `/app/plugins`） |
 | `SYNC_SCRIPT_PATH` | 发布同步脚本 | 运行时 | `/root/projects/claude-skill-hub/scripts/sync-marketplace.sh`（容器内需调整，§5.4） |
-| `NEXT_PUBLIC_APP_URL` | `/api/marketplace` 里 download-zip 来源 | **构建时** | 未设则回退 `https://115.190.193.230:7504`（内网需设成 `http://10.0.43.61:7788`） |
-| `NEXT_PUBLIC_MARKETPLACE_URL` | guide 页展示的 marketplace URL | **构建时** | `http://10.0.43.61:7789/skill-hub.git` |
+| `NEXT_PUBLIC_APP_URL` | `/api/marketplace` 里 download-zip 来源 | **构建时** | 未设则回退 `https://115.190.193.230:7504`（内网需设成 `http://10.9.43.61:7788`） |
+| `NEXT_PUBLIC_MARKETPLACE_URL` | guide 页展示的 marketplace URL | **构建时** | `http://10.9.43.61:7789/skill-hub.git` |
 | `PORT` / `HOSTNAME` | 容器监听 | 镜像内置 | `3000` / `0.0.0.0` |
