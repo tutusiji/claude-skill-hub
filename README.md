@@ -33,7 +33,7 @@
 
 ```bash
 # 1. 添加 marketplace(一次性,URL 替换为你的内部部署地址)
-claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git
 
 # 2. 浏览 Web UI,或直接安装
 claude plugin install <plugin-name>@internal-skill-hub

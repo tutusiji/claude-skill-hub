@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-xs text-[var(--muted)] mt-4">
-          仅限管理员访问 · 内网 10.9.43.61:7788/admin
+          仅限管理员访问 · 内网 10.0.43.61:7788/admin
         </p>
       </div>
     </main>

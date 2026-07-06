@@ -1,3 +1,5 @@
+> ⚠️ **本文档已过时**：描述的 `web` + `git-server` 双容器拓扑中，`git-server` 容器已在 `f8aa05b` 架构重构中移除；marketplace URL 也已统一为 `http://10.0.43.61:7789/skill-hub.git`（去掉 `/git/`）。当前为单 `web` 容器 + 宿主机 git marketplace。最新部署指南见 [`offline-deploy.md`](./offline-deploy.md)。
+
 # 部署指南
 
 ## 架构概览
@@ -40,7 +42,7 @@ docker compose up -d
 首次启动后，git 容器里的 bare 仓库是空的，需要推送一次代码：
 
 ```bash
-git remote add internal http://10.0.43.61:7789/git/claude-skill-hub.git
+git remote add internal http://10.0.43.61:7789/claude-skill-hub.git
 git push internal main
 ```
 
@@ -51,14 +53,14 @@ git push internal main
 curl -sS http://10.0.43.61:7788 | grep '插件市场'
 
 # Git 仓库
-git clone http://10.0.43.61:7789/git/claude-skill-hub.git /tmp/verify
+git clone http://10.0.43.61:7789/claude-skill-hub.git /tmp/verify
 ls /tmp/verify/plugins/ | wc -l    # 应输出 23
 ```
 
 ### 5. 用户配置 Claude Code
 
 ```bash
-claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/claude-skill-hub.git
 /plugin install docker-pro@internal-skill-hub
 ```
 
@@ -180,7 +182,7 @@ docker compose logs git-server  # 查看错误日志
 docker compose restart git-server
 
 # 测试 git 仓库是否响应
-curl "http://10.0.43.61:7789/git/claude-skill-hub.git/info/refs?service=git-upload-pack"
+curl "http://10.0.43.61:7789/claude-skill-hub.git/info/refs?service=git-upload-pack"
 # 应返回以 001e# service=git-upload-pack 开头的内容
 ```
 

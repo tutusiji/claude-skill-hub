@@ -28,7 +28,7 @@ export async function GET() {
         version: p.version,
         source: {
           source: 'url',
-          url: `https://joox.cc:7504/api/plugins/${p.name}/download-zip`,
+          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://joox.cc:7504'}/api/plugins/${p.name}/download-zip`,
         },
       };
     }),

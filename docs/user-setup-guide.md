@@ -10,16 +10,16 @@
 
 ```bash
 # 裸 Git 仓库方案
-claude plugin marketplace add http://10.0.43.61:7789/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git
 
 # Gitea 方案（如果管理员用的是 Gitea）
-claude plugin marketplace add http://10.0.43.61:7789/platform-team/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/platform-team/skill-hub.git
 ```
 
 或者在 Claude Code 交互界面内执行：
 
 ```
-/plugin marketplace add http://10.0.43.61:7789/claude-skill-hub.git
+/plugin marketplace add http://10.0.43.61:7789/skill-hub.git
 ```
 
 ### 2. 设置离线环境变量
@@ -120,7 +120,7 @@ claude plugin marketplace list
 # claude plugin marketplace add anthropics/claude-plugins-official
 
 # 内部 marketplace
-claude plugin marketplace add http://10.0.43.61:7789/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git
 ```
 
 安装时通过 `@marketplace-name` 指定来源：
@@ -179,7 +179,7 @@ export CLAUDE_CODE_PLUGIN_KEEP_MARKETPLACE_ON_FAILURE=1
 
 | 操作 | 命令 |
 |------|------|
-| 添加内部 marketplace | `claude plugin marketplace add http://10.0.43.61:7789/claude-skill-hub.git` |
+| 添加内部 marketplace | `claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git` |
 | 更新 marketplace | `claude plugin marketplace update internal-skill-hub` |
 | 列出 marketplace | `claude plugin marketplace list` |
 | 浏览插件 (Web) | 浏览器打开 `http://10.0.43.61:7788` |

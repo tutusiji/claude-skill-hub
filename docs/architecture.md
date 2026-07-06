@@ -292,7 +292,7 @@ layout.tsx (全局布局: header + footer + 主题切换)
 
 ```bash
 # 内网环境添加 Skill Hub marketplace
-claude plugin marketplace add http://10.0.43.61:7789/git/claude-skill-hub.git
+claude plugin marketplace add http://10.0.43.61:7789/skill-hub.git
 ```
 
 ### 安装插件
@@ -372,7 +372,7 @@ docker compose up -d
 | `ADMIN_PASSWORD` | 管理员密码（**必填**，否则登录禁用） | — |
 | `AUTH_SECRET` | token 签名密钥（可选，默认复用 `ADMIN_PASSWORD`） | — |
 | `SYNC_SCRIPT_PATH` | 发布/删除/编辑时调用的同步脚本 | `/root/projects/claude-skill-hub/scripts/sync-marketplace.sh` |
-| `NEXT_PUBLIC_MARKETPLACE_URL` | 详情页显示的 marketplace URL | `http://10.0.43.61:7789/git/skill-hub.git` |
+| `NEXT_PUBLIC_MARKETPLACE_URL` | 详情页显示的 marketplace URL | `http://10.0.43.61:7789/skill-hub.git` |
 
 > **关于同步脚本**：`sync-marketplace.sh` 默认指向 systemd+nginx 部署的 `/opt/skill-hub` 布局。Docker Compose 部署下，git marketplace 通过 `git push internal main` 更新（见 deploy.md「更新插件后重新部署」）；如需发布动态插件时自动同步到 git-server 容器，改写该脚本并通过 `SYNC_SCRIPT_PATH` 指定。
 
