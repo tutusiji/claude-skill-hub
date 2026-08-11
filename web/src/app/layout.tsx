@@ -5,7 +5,7 @@ import { Wrench } from 'lucide-react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Skill Hub — 内部 AI 编程工具插件市场',
+  title: 'Skillhub — 内部 AI 编程工具插件市场',
   description: '浏览、搜索并安装 Claude Code 插件与技能。',
 };
 
@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-[var(--border)] sticky top-0 z-50 backdrop-blur-md bg-[var(--background)]/80">
           <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-              <span className="text-brand-500">Skill</span>Hub
+              Skillhub
             </Link>
             <nav className="flex items-center gap-6 text-sm text-[var(--muted)]">
               <Link href="/" className="hover:text-[var(--foreground)] transition-colors">首页</Link>

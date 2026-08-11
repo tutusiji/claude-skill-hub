@@ -58,7 +58,7 @@ export default function AdminLoginPage() {
             <Wrench className="w-7 h-7 text-brand-500" />
           </div>
           <h1 className="text-xl font-bold mb-1">管理后台</h1>
-          <p className="text-sm text-[var(--muted)]">Skill Hub 管理员登录</p>
+          <p className="text-sm text-[var(--muted)]">Skillhub 管理员登录</p>
         </div>
 
         <form onSubmit={handleSubmit} className="card p-6 space-y-4">

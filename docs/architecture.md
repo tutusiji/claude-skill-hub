@@ -1,8 +1,8 @@
-# Skill Hub 架构设计文档
+# Skillhub 架构设计文档
 
 ## 1. 概述
 
-Skill Hub 是一套面向公司内部的 Claude Code 插件分发平台。系统采用**文件管理架构**（非 Git 仓库模式），通过 Web 表单上传插件包，管理员审核后一键上架，前台自动展示。
+Skillhub 是一套面向公司内部的 Claude Code 插件分发平台。系统采用**文件管理架构**（非 Git 仓库模式），通过 Web 表单上传插件包，管理员审核后一键上架，前台自动展示。
 
 ### 核心流程
 
@@ -291,7 +291,7 @@ layout.tsx (全局布局: header + footer + 主题切换)
 ### 添加 Marketplace
 
 ```bash
-# 内网环境添加 Skill Hub marketplace
+# 内网环境添加 Skillhub marketplace
 claude plugin marketplace add http://your-internal-host:7789/skill-hub.git
 ```
 

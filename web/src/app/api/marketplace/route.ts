@@ -18,7 +18,7 @@ export async function GET() {
     name: getMarketplaceName(),
     description: '内部 Claude Code 技能市场 — 浏览、搜索并安装内部技能和插件',
     owner: {
-      name: 'Skill Hub',
+      name: 'Skillhub',
     },
     plugins: allPlugins.map((p) => {
       return {

@@ -1,4 +1,4 @@
-# Skill Hub 部署指南
+# Skillhub 部署指南
 
 ## 环境概览
 
@@ -101,8 +101,8 @@ cd /opt/skill-hub/marketplace-worktree
 git init && git checkout -b main
 git remote add origin /opt/skill-hub/repo/skill-hub.git
 mkdir -p .claude-plugin plugins
-echo '{"name":"skill-hub","description":"内部 Claude Code 技能市场","owner":{"name":"Skill Hub"},"plugins":[]}' > .claude-plugin/marketplace.json
-git add -A && git -c user.name="Skill Hub" -c user.email="bot@skill-hub" commit -m "init"
+echo '{"name":"skill-hub","description":"内部 Claude Code 技能市场","owner":{"name":"Skillhub"},"plugins":[]}' > .claude-plugin/marketplace.json
+git add -A && git -c user.name="Skillhub" -c user.email="bot@skill-hub" commit -m "init"
 git push origin main
 cd /opt/skill-hub/repo/skill-hub.git && git update-server-info
 ```
@@ -120,7 +120,7 @@ chmod -R a+r /opt/skill-hub/repo/skill-hub.git
 ```bash
 cat > /etc/systemd/system/skill-hub.service << 'EOF'
 [Unit]
-Description=Skill Hub
+Description=Skillhub
 After=network.target
 
 [Service]

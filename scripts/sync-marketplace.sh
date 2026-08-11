@@ -110,7 +110,7 @@ for p in static_plugins + published_plugins:
 marketplace = {
     "name": "skill-hub",
     "description": "内部 Claude Code 技能市场 — 浏览、搜索并安装内部技能和插件",
-    "owner": {"name": "Skill Hub"},
+    "owner": {"name": "Skillhub"},
     "plugins": marketplace_plugins,
 }
 
@@ -126,7 +126,7 @@ git add -A
 if git diff --cached --quiet; then
   echo "no changes"
 else
-  git -c user.name="Skill Hub" -c user.email="bot@skill-hub" commit -m "sync: $(date '+%Y-%m-%d %H:%M:%S')"
+  git -c user.name="Skillhub" -c user.email="bot@skill-hub" commit -m "sync: $(date '+%Y-%m-%d %H:%M:%S')"
   git push origin main
   echo "pushed to bare repo"
 fi

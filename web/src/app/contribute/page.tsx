@@ -134,7 +134,7 @@ tar -czf my-plugin.tar.gz my-plugin/
             </div>
             <h2 className="text-lg font-bold mb-2">准备好发布你的插件了吗？</h2>
             <p className="text-sm text-[var(--muted)] mb-6 max-w-md mx-auto">
-              按照上面的规范打包好插件后，前往发布页面提交，管理员审核通过后将上架到 SkillHub。
+              按照上面的规范打包好插件后，前往发布页面提交，管理员审核通过后将上架到 Skillhub。
             </p>
             <Link
               href="/publish"

@@ -1,4 +1,4 @@
-# Skill Hub — 内部 AI 编程工具插件与技能市场
+# Skillhub — 内部 AI 编程工具插件与技能市场
 
 一套自托管的插件/技能市场,面向公司内部使用。支持 **Claude Code、Codex CLI、Kimi Code、OpenCode、CodeWhale** 等多种 AI 编程工具。提供 Web 浏览界面、Web 表单上传 + 管理员审核的上架流程、CI 校验,以及原生 Claude Code marketplace 集成。
 

@@ -117,7 +117,7 @@ export default function PublishPage() {
       const data = await res.json();
 
       if (res.ok) {
-        setResult({ success: true, message: data.message || '提交成功！管理员将在审核后处理您的插件。审核通过后会上架到 SkillHub，请持续关注！' });
+        setResult({ success: true, message: data.message || '提交成功！管理员将在审核后处理您的插件。审核通过后会上架到 Skillhub，请持续关注！' });
         setForm({ name: '', employeeId: '', email: '', department: '', description: '', category: '', uploadType: 'plugin' });
         setFile(null);
         setValidationResult(null);
@@ -153,7 +153,7 @@ export default function PublishPage() {
         </div>
         <h1 className="text-2xl font-bold mb-2">发布你的插件</h1>
         <p className="text-sm text-[var(--muted)]">
-          上传你的插件或技能包，管理员审核后将上架到 SkillHub
+          上传你的插件或技能包，管理员审核后将上架到 Skillhub
         </p>
       </div>
 

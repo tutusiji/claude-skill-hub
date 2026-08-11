@@ -1,4 +1,4 @@
-# Contributing to Skill Hub
+# Contributing to Skillhub
 
 ## Quick Start
 
