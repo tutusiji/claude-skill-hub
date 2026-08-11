@@ -14,5 +14,11 @@ data/
 uploads/
 
 # 环境变量（含敏感信息）
+# .env.*.local 保存各环境的真实密码/地址，永不提交
 web/.env.local
 .env.local
+web/.env.*.local
+.env.*.local
+
+# 真实地址/密码备份（从被脱敏的文档与配置文件复制而来，永不提交）
+secrets-backup/

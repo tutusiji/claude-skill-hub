@@ -4,9 +4,9 @@
 
 | 环境 | 地址 | 协议 | 用途 |
 |------|------|------|------|
-| 公网生产 | `https://joox.cc:7504` | HTTPS | 对外访问 |
-| 内网生产 | `http://10.9.43.61:7504` | HTTP | 内网团队使用 |
-| 开发环境 | `http://115.190.193.230:7504` | HTTP | 开发调试 |
+| 公网生产 | `https://your-public-host.com:7504` | HTTPS | 对外访问 |
+| 内网生产 | `http://your-internal-host:7504` | HTTP | 内网团队使用 |
+| 开发环境 | `http://your-dev-host:7504` | HTTP | 开发调试 |
 
 ## 前置条件
 
@@ -39,16 +39,22 @@ npm install
 
 ### 2. 选择环境配置
 
+仓库中的 `.env.development` / `.env.internal` / `.env.production` 仅含占位值（不包含真实密码/地址）。
+真实配置存放在对应 gitignored 的 `.local` 文件（`.env.development.local` 等），需要运维在服务器上手动提供。
+
 ```bash
 # 公网生产
-cp .env.production .env.local
+cp .env.production.local .env.local
 
 # 内网生产
-cp .env.internal .env.local
+cp .env.internal.local .env.local
 
 # 开发环境
-cp .env.development .env.local
+cp .env.development.local .env.local
 ```
+
+> 若 `.env.<env>.local` 不存在，请向运维索取，或直接编辑 `.env.local` 填入真实的
+> `ADMIN_PASSWORD`、`JWT_SECRET`、`NEXT_PUBLIC_APP_URL`、`NEXT_PUBLIC_MARKETPLACE_URL`。
 
 ### 3. 构建
 
@@ -71,6 +77,10 @@ cp deploy/nginx-dev.conf /etc/nginx/conf.d/skill-hub-7504.conf
 
 nginx -t && systemctl reload nginx
 ```
+
+> 仓库中的 `deploy/nginx-*.conf` 已脱敏（`server_name`、证书路径、注释均为占位值）。
+> 含真实地址与证书路径的原始版本保存在 gitignored 的 `secrets-backup/deploy/` 下，
+> 部署时直接使用备份文件，或按需替换占位值为实际值。
 
 ### 5. 创建数据目录
 
@@ -153,13 +163,13 @@ claude plugin marketplace add http://<server-ip>:7504/skill-hub.git
 | 变量 | 说明 | 示例 |
 |------|------|------|
 | `ADMIN_USERNAME` | 管理员用户名 | `admin` |
-| `ADMIN_PASSWORD` | 管理员密码 | `admin@123456` |
+| `ADMIN_PASSWORD` | 管理员密码 | `change-me` |
 | `JWT_SECRET` | JWT 签名密钥 | 随机字符串 |
 | `DATA_DIR` | 数据目录 | `/opt/skill-hub/data` |
 | `UPLOAD_DIR` | 上传目录 | `/opt/skill-hub/uploads` |
 | `STATIC_PLUGINS_DIR` | 静态插件目录 | 项目 `plugins/` 目录 |
-| `NEXT_PUBLIC_APP_URL` | 站点 URL | `https://joox.cc:7504` |
-| `NEXT_PUBLIC_MARKETPLACE_URL` | marketplace Git URL | `https://joox.cc:7504/skill-hub.git` |
+| `NEXT_PUBLIC_APP_URL` | 站点 URL | `https://your-public-host.com:7504` |
+| `NEXT_PUBLIC_MARKETPLACE_URL` | marketplace Git URL | `https://your-public-host.com:7504/skill-hub.git` |
 
 ## 更新部署
 
