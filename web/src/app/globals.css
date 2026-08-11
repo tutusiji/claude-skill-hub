@@ -39,6 +39,23 @@ body {
     background: var(--card-hover);
     border-color: var(--hover-border);
   }
+  .form-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--foreground);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus {
+    border-color: #d97706;
+  }
+  .form-input::placeholder {
+    color: var(--muted);
+  }
 }
 
 /* Thin scrollbar for horizontal scroll areas */
