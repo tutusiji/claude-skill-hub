@@ -5,10 +5,12 @@ import { CopyButtonWithTracking } from '@/components/copy-button-with-tracking';
 import { PluginSidebar } from '@/components/plugin-sidebar';
 import registry from '@/lib/registry.json';
 import { getPublishedPlugins } from '@/lib/published-plugins';
-import { getPluginStats } from '@/lib/storage';
+import { getPluginStats, getPluginInstallCount, getPluginLikeCount } from '@/lib/storage';
+import { getMarketplaceUrl, getMarketplaceName } from '@/lib/config';
 import type { Plugin } from '@/lib/types';
 import { CATEGORY_LABELS } from '@/lib/types';
 import { InstallCommands } from '@/components/install-commands';
+import { LikeButton } from '@/components/like-button';
 
 const staticPlugins = registry as Plugin[];
 
@@ -30,12 +32,14 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
 
   if (!plugin) notFound();
 
-  const marketplaceUrl = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.9.43.61:7789/skill-hub.git';
-  const marketplaceName = 'skill-hub';
+  const marketplaceUrl = getMarketplaceUrl();
+  const marketplaceName = getMarketplaceName();
   const categoryLabel = CATEGORY_LABELS[plugin.category] || plugin.category;
 
   const stats = getPluginStats();
   const downloadCount = stats[plugin.name] || 0;
+  const installCount = getPluginInstallCount(plugin.name);
+  const likeCount = getPluginLikeCount(plugin.name);
 
   const allPlugins = [...staticPlugins, ...getPublishedPlugins().filter(
     (p) => !staticPlugins.some((s) => s.name === p.name)
@@ -191,7 +195,9 @@ export default async function PluginDetailPage({ params }: { params: Promise<{ n
             category={categoryLabel}
             license={plugin.license}
             downloadCount={downloadCount}
+            installCount={installCount}
             skillsCount={plugin.skills?.length || 0}
+            likeCount={likeCount}
           />
         </aside>
       </div>

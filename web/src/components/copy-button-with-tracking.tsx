@@ -16,9 +16,9 @@ export function CopyButtonWithTracking({ text, pluginName }: CopyButtonWithTrack
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
 
-    // Track download/install
+    // 记录安装意向（复制安装命令），与 ZIP 下载分开计数
     try {
-      await fetch(`/api/plugins/${pluginName}/download`, { method: 'POST' });
+      await fetch(`/api/plugins/${pluginName}/install`, { method: 'POST' });
     } catch {
       // Silent fail — don't block copy
     }

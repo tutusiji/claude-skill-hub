@@ -1,143 +1,19 @@
-'use client';
-
-import { useState, useRef } from 'react';
+import Link from 'next/link';
 import {
-  GitPullRequest, FileCode, CheckCircle, AlertTriangle, Terminal,
-  Upload, User, Mail, Building2, Hash, FileText, Loader2, Check, X,
-  ShieldCheck, ShieldAlert, ChevronDown, ChevronUp, XCircle, Tag,
+  FileCode, CheckCircle, AlertTriangle, Terminal, Upload, Rocket,
 } from 'lucide-react';
-import { CATEGORIES, CATEGORY_LABELS } from '@/lib/types';
 import { TocNav } from '@/components/toc-nav';
 
 const SECTIONS = [
-  { id: 'create', title: '创建插件目录' },
+  { id: 'create', title: '准备目录结构' },
   { id: 'plugin-json', title: '编写 plugin.json' },
   { id: 'skill-md', title: '编写 SKILL.md' },
   { id: 'package', title: '打包上传' },
   { id: 'review', title: '审核标准' },
-  { id: 'submit', title: '提交插件' },
+  { id: 'submit', title: '发布插件' },
 ];
 
-interface ValidationResult {
-  passed: boolean;
-  errors: string[];
-  warnings: string[];
-  summary: {
-    pluginName?: string;
-    version?: string;
-    description?: string;
-    category?: string;
-    skillsCount: number;
-    commandsCount: number;
-    filesScanned: number;
-  };
-}
-
 export default function ContributePage() {
-  const [form, setForm] = useState({
-    name: '', employeeId: '', email: '', department: '', description: '', category: '',
-  });
-  const [file, setFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
-  const [validating, setValidating] = useState(false);
-  const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
-  const [showValidationDetail, setShowValidationDetail] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleChange = (field: keyof typeof form, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      setFile(f);
-      setValidationResult(null);
-    }
-  };
-
-  // ─── 上传前验证 ───────────────────────────────────
-  const handleValidate = async () => {
-    if (!file) return;
-    setValidating(true);
-    setValidationResult(null);
-    setShowValidationDetail(false);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/validate', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setValidationResult(data);
-      } else {
-        setValidationResult({
-          passed: false,
-          errors: [data.error || '验证失败'],
-          warnings: [],
-          summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 },
-        });
-      }
-    } catch {
-      setValidationResult({
-        passed: false,
-        errors: ['网络错误，请重试'],
-        warnings: [],
-        summary: { skillsCount: 0, commandsCount: 0, filesScanned: 0 },
-      });
-    } finally {
-      setValidating(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setResult(null);
-
-    if (!form.name.trim() || !form.employeeId.trim() || !form.email.trim() ||
-        !form.department.trim() || !form.description.trim() || !form.category.trim() || !file) {
-      setResult({ success: false, message: '所有字段均为必填项，请完整填写。' });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const formData = new FormData();
-      formData.append('name', form.name);
-      formData.append('employeeId', form.employeeId);
-      formData.append('email', form.email);
-      formData.append('department', form.department);
-      formData.append('description', form.description);
-      formData.append('category', form.category);
-      formData.append('file', file);
-
-      const res = await fetch('/api/contribute', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setResult({ success: true, message: data.message || '提交成功！' });
-        setForm({ name: '', employeeId: '', email: '', department: '', description: '', category: '' });
-        setFile(null);
-        setValidationResult(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      } else {
-        setResult({ success: false, message: data.error || '提交失败，请重试。' });
-      }
-    } catch {
-      setResult({ success: false, message: '网络错误，请重试。' });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <main className="max-w-5xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr] gap-8">
@@ -148,29 +24,51 @@ export default function ContributePage() {
           </div>
         </aside>
         <div className="min-w-0">
-      <h1 className="text-2xl font-bold mb-2">贡献插件</h1>
-      <p className="text-sm text-[var(--muted)] mb-8">
-        按照以下规范开发你的插件，打包上传后由管理员审核上架。
-      </p>
-
-      {/* Development Guidelines */}
-      <div className="space-y-6 mb-8">
-        <Step id="create" num={1} icon={Terminal} title="创建插件目录">
-          <p className="text-sm text-[var(--muted)] mb-3">
-            在本地创建插件目录，结构如下：
+          <h1 className="text-2xl font-bold mb-2">贡献指南</h1>
+          <p className="text-sm text-[var(--muted)] mb-8">
+            按照以下规范开发你的插件，打包后前往发布页面提交，由管理员审核上架。
           </p>
-          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`my-plugin/
-  .plugin/
-    plugin.json        # 必需 — 插件清单
+
+          {/* Development Guidelines */}
+          <div className="space-y-6 mb-8">
+            <Step id="create" num={1} icon={Terminal} title="准备目录结构">
+              <p className="text-sm text-[var(--muted)] mb-3">
+                根据你要上传的类型，选择对应的目录结构：
+              </p>
+              <div className="space-y-3">
+                <div className="p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-xs font-semibold text-brand-500 mb-2">结构 A：标准插件</div>
+                  <pre className="bg-[var(--background)] rounded p-3 text-xs overflow-x-auto"><code>{`my-plugin/
+  .claude-plugin/
+    plugin.json      # 必需 — 插件清单
   skills/
     my-skill/
-      SKILL.md          # 技能定义
-  commands/             # 可选
+      SKILL.md       # 技能定义
+  commands/           # 可选
     my-command.md`}</code></pre>
-        </Step>
+                </div>
+                <div className="p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-xs font-semibold text-brand-500 mb-2">结构 B：技能集合包</div>
+                  <pre className="bg-[var(--background)] rounded p-3 text-xs overflow-x-auto"><code>{`my-skills/
+  skills/
+    skill-a/
+      SKILL.md
+    skill-b/
+      SKILL.md
+  README.md           # 可选`}</code></pre>
+                </div>
+                <div className="p-3 rounded-lg border border-[var(--border)]">
+                  <div className="text-xs font-semibold text-brand-500 mb-2">结构 C：单个技能（平铺）</div>
+                  <pre className="bg-[var(--background)] rounded p-3 text-xs overflow-x-auto"><code>{`my-skill/
+  SKILL.md           # 必需 — 带 YAML frontmatter
+  assets/            # 可选
+  references/        # 可选`}</code></pre>
+                </div>
+              </div>
+            </Step>
 
-        <Step id="plugin-json" num={2} icon={FileCode} title="编写 plugin.json（含 compatibility 字段）">
-          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`{
+            <Step id="plugin-json" num={2} icon={FileCode} title="编写 plugin.json（含 compatibility 字段）">
+              <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`{
   "name": "my-plugin",
   "version": "1.0.0",
   "description": "插件描述，至少 10 个字符。",
@@ -181,13 +79,13 @@ export default function ContributePage() {
   "homepage": "https://github.com/...",
   "license": "MIT"
 }`}</code></pre>
-          <p className="text-xs text-[var(--muted)] mt-2">
-            name 必须是小写连字符格式，version 必须是 semver 格式。可选字段：author、homepage、license。
-          </p>
-        </Step>
+              <p className="text-xs text-[var(--muted)] mt-2">
+                name 必须是小写连字符格式，version 必须是 semver 格式。可选字段：author、homepage、license。
+              </p>
+            </Step>
 
-        <Step id="skill-md" num={3} icon={CheckCircle} title="编写 SKILL.md">
-          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`---
+            <Step id="skill-md" num={3} icon={CheckCircle} title="编写 SKILL.md">
+              <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`---
 name: my-skill
 description: 技能描述 — 什么场景下使用
 ---
@@ -195,298 +93,57 @@ description: 技能描述 — 什么场景下使用
 # 技能内容
 
 在这里编写技能的具体指令和流程...`}</code></pre>
-          <p className="text-xs text-[var(--muted)] mt-2">
-            SKILL.md 必须包含 YAML frontmatter（name 和 description 字段）。
-          </p>
-        </Step>
+              <p className="text-xs text-[var(--muted)] mt-2">
+                SKILL.md 必须包含 YAML frontmatter（name 和 description 字段）。
+              </p>
+            </Step>
 
-        <Step id="package" num={4} icon={Upload} title="打包上传">
-          <p className="text-sm text-[var(--muted)] mb-3">
-            将整个插件目录打包为 <code className="text-brand-500">.zip</code> 文件后通过下方表单上传。
-          </p>
-          <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`# 在插件目录的上级目录执行
+            <Step id="package" num={4} icon={Upload} title="打包上传">
+              <p className="text-sm text-[var(--muted)] mb-3">
+                将整个目录打包为 <code className="text-brand-500">.zip</code> 文件后前往发布页面上传。
+              </p>
+              <pre className="bg-[var(--background)] border border-[var(--border)] rounded-lg p-4 text-xs overflow-x-auto"><code>{`# 在目录的上级执行
 zip -r my-plugin.zip my-plugin/
 
 # 或使用 tar.gz
 tar -czf my-plugin.tar.gz my-plugin/
 
-# ZIP 内部结构应为：
-# my-plugin.zip
-#   └── my-plugin/
-#         ├── .plugin/plugin.json
-#         ├── skills/...
-#         └── commands/...  (可选)`}</code></pre>
-          <p className="text-xs text-[var(--muted)] mt-2">
-            建议先点击"上传前验证"检查插件结构，验证通过后再提交审核。
-          </p>
-        </Step>
+# 注意：ZIP 内需要有一层根目录（不能是文件直接平铺）
+# 例如：my-skill.zip 解压后是 my-skill/SKILL.md`}</code></pre>
+            </Step>
 
-        <div id="review" className="card p-5 border-l-2 border-yellow-500 scroll-mt-20">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-yellow-500" />
-            <h3 className="text-sm font-semibold">审核标准</h3>
-          </div>
-          <ul className="text-xs text-[var(--muted)] space-y-1">
-            <li>- 不得包含硬编码的密钥、令牌或凭证</li>
-            <li>- 描述需清晰说明技能的用途</li>
-            <li>- SKILL.md 必须包含 YAML frontmatter</li>
-            <li>- 分类和关键词需准确</li>
-            <li>- 未经说明不得调用外部网络服务</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Upload Form */}
-      <div id="submit" className="card p-6 scroll-mt-20">
-        <h2 className="text-base font-semibold mb-4 flex items-center gap-2">
-          <GitPullRequest className="w-4 h-4 text-brand-500" />
-          提交插件
-        </h2>
-
-        {result && (
-          <div className={`mb-4 flex items-start gap-2 px-4 py-3 rounded-lg text-sm ${
-            result.success
-              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-              : 'bg-red-500/10 text-red-500 border border-red-500/20'
-          }`}>
-            {result.success ? <Check className="w-4 h-4 shrink-0 mt-0.5" /> : <X className="w-4 h-4 shrink-0 mt-0.5" />}
-            <span>{result.message}</span>
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="姓名" icon={User} required>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="form-input"
-                placeholder="张三"
-              />
-            </FormField>
-
-            <FormField label="工号" icon={Hash} required>
-              <input
-                type="text"
-                value={form.employeeId}
-                onChange={(e) => handleChange('employeeId', e.target.value)}
-                className="form-input"
-                placeholder="BYD00001"
-              />
-            </FormField>
-
-            <FormField label="邮箱" icon={Mail} required>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                className="form-input"
-                placeholder="zhangsan@byd.com"
-              />
-            </FormField>
-
-            <FormField label="部门" icon={Building2} required>
-              <input
-                type="text"
-                value={form.department}
-                onChange={(e) => handleChange('department', e.target.value)}
-                className="form-input"
-                placeholder="平台研发部"
-              />
-            </FormField>
-          </div>
-
-          <FormField label="文件描述" icon={FileText} required>
-            <textarea
-              value={form.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              className="form-input min-h-[80px] resize-y"
-              placeholder="简要描述插件功能、适用场景和技术栈..."
-            />
-          </FormField>
-
-          <FormField label="插件分类" icon={Tag} required>
-            <select
-              value={form.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              className="form-input"
-            >
-              <option value="">请选择分类</option>
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {CATEGORY_LABELS[cat] || cat}
-                </option>
-              ))}
-            </select>
-          </FormField>
-
-          <FormField label="上传插件包" icon={Upload} required>
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-[var(--border)] rounded-lg p-6 text-center cursor-pointer hover:border-brand-500 transition-colors"
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                onChange={handleFileChange}
-                accept=".zip,.tar.gz,.tgz"
-                className="hidden"
-              />
-              {file ? (
-                <div className="flex items-center justify-center gap-2 text-sm">
-                  <CheckCircle className="w-4 h-4 text-emerald-500" />
-                  <span className="font-medium">{file.name}</span>
-                  <span className="text-[var(--muted)] text-xs">
-                    ({(file.size / 1024).toFixed(1)} KB)
-                  </span>
-                </div>
-              ) : (
-                <div className="text-sm text-[var(--muted)]">
-                  <Upload className="w-6 h-6 mx-auto mb-2 opacity-50" />
-                  点击选择文件 · 支持 .zip / .tar.gz
-                </div>
-              )}
-            </div>
-          </FormField>
-
-          {/* 验证按钮 + 结果 */}
-          {file && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleValidate}
-                  disabled={validating}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[var(--background)] border border-[var(--border)] hover:border-brand-500 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {validating ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 验证中...</>
-                  ) : (
-                    <><ShieldCheck className="w-3.5 h-3.5" /> 上传前验证</>
-                  )}
-                </button>
-                {validationResult && !validating && (
-                  <span className={`text-xs font-medium flex items-center gap-1 ${
-                    validationResult.passed ? 'text-emerald-500' : 'text-red-500'
-                  }`}>
-                    {validationResult.passed ? (
-                      <><CheckCircle className="w-3.5 h-3.5" /> 验证通过</>
-                    ) : (
-                      <><ShieldAlert className="w-3.5 h-3.5" /> 验证失败 ({validationResult.errors.length} 个错误)</>
-                    )}
-                  </span>
-                )}
+            <div id="review" className="card p-5 border-l-2 border-yellow-500 scroll-mt-20">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                <h3 className="text-sm font-semibold">审核标准</h3>
               </div>
-
-              {/* 验证结果详情 */}
-              {validationResult && (
-                <div className={`rounded-lg border p-4 ${
-                  validationResult.passed
-                    ? 'bg-emerald-500/5 border-emerald-500/20'
-                    : 'bg-red-500/5 border-red-500/20'
-                }`}>
-                  {/* 概要信息 */}
-                  {validationResult.summary.pluginName && (
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-3">
-                      <span className="text-[var(--muted)]">插件: <code className="text-brand-500">{validationResult.summary.pluginName}</code></span>
-                      {validationResult.summary.version && (
-                        <span className="text-[var(--muted)]">版本: v{validationResult.summary.version}</span>
-                      )}
-                      {validationResult.summary.category && (
-                        <span className="text-[var(--muted)]">分类: {validationResult.summary.category}</span>
-                      )}
-                      <span className="text-[var(--muted)]">技能: {validationResult.summary.skillsCount}</span>
-                      <span className="text-[var(--muted)]">命令: {validationResult.summary.commandsCount}</span>
-                      <span className="text-[var(--muted)]">扫描文件: {validationResult.summary.filesScanned}</span>
-                    </div>
-                  )}
-
-                  {/* 错误列表 */}
-                  {validationResult.errors.length > 0 && (
-                    <div className="mb-2">
-                      <div className="text-xs font-medium text-red-500 mb-1">错误 ({validationResult.errors.length})</div>
-                      <ul className="space-y-1">
-                        {validationResult.errors.map((err, i) => (
-                          <li key={i} className="text-xs text-red-400 flex items-start gap-1.5">
-                            <XCircle className="w-3 h-3 shrink-0 mt-0.5" />
-                            <span>{err}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* 警告列表 */}
-                  {validationResult.warnings.length > 0 && (
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => setShowValidationDetail(!showValidationDetail)}
-                        className="text-xs font-medium text-yellow-500 mb-1 flex items-center gap-1"
-                      >
-                        <AlertTriangle className="w-3 h-3" />
-                        警告 ({validationResult.warnings.length})
-                        {showValidationDetail ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      </button>
-                      {showValidationDetail && (
-                        <ul className="space-y-1">
-                          {validationResult.warnings.map((warn, i) => (
-                            <li key={i} className="text-xs text-yellow-400/80 flex items-start gap-1.5">
-                              <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
-                              <span>{warn}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-
-                  {/* 通过提示 */}
-                  {validationResult.passed && validationResult.warnings.length === 0 && (
-                    <div className="text-xs text-emerald-500 flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      插件结构完整，无安全风险，可以提交审核。
-                    </div>
-                  )}
-                </div>
-              )}
+              <ul className="text-xs text-[var(--muted)] space-y-1">
+                <li>- 不得包含硬编码的密钥、令牌或凭证</li>
+                <li>- 描述需清晰说明技能的用途</li>
+                <li>- SKILL.md 必须包含 YAML frontmatter</li>
+                <li>- 分类和关键词需准确</li>
+                <li>- 未经说明不得调用外部网络服务</li>
+              </ul>
             </div>
-          )}
+          </div>
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {submitting ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> 提交中...</>
-            ) : (
-              <><Upload className="w-4 h-4" /> 提交审核</>
-            )}
-          </button>
-        </form>
-      </div>
-
-      <style jsx>{`
-        :global(.form-input) {
-          width: 100%;
-          padding: 0.625rem 0.75rem;
-          background: var(--background);
-          border: 1px solid var(--border);
-          border-radius: 0.5rem;
-          font-size: 0.875rem;
-          color: var(--foreground);
-          outline: none;
-          transition: border-color 0.15s;
-        }
-        :global(.form-input:focus) {
-          border-color: var(--brand-500, #ea9518);
-        }
-        :global(.form-input::placeholder) {
-          color: var(--muted);
-        }
-      `}</style>
+          {/* 发布引导 */}
+          <div id="submit" className="card p-8 scroll-mt-20 text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand-600/20 mb-4">
+              <Rocket className="w-7 h-7 text-brand-500" />
+            </div>
+            <h2 className="text-lg font-bold mb-2">准备好发布你的插件了吗？</h2>
+            <p className="text-sm text-[var(--muted)] mb-6 max-w-md mx-auto">
+              按照上面的规范打包好插件后，前往发布页面提交，管理员审核通过后将上架到 SkillHub。
+            </p>
+            <Link
+              href="/publish"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              <Rocket className="w-4 h-4" />
+              立即发布
+            </Link>
+          </div>
         </div>
       </div>
     </main>
@@ -503,32 +160,12 @@ function Step({ id, num, icon: Icon, title, children }: {
   return (
     <div id={id} className="card p-5 scroll-mt-20">
       <div className="flex items-center gap-3 mb-4">
-        <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-sm font-bold shrink-0">
+        <div className="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-sm font-bold shrink-0 text-white">
           {num}
         </div>
         <Icon className="w-4 h-4 text-brand-500" />
         <h2 className="text-sm font-semibold">{title}</h2>
       </div>
-      {children}
-    </div>
-  );
-}
-
-function FormField({
-  label, icon: Icon, required, children,
-}: {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label className="flex items-center gap-1.5 text-xs text-[var(--muted)] mb-1.5">
-        <Icon className="w-3.5 h-3.5" />
-        {label}
-        {required && <span className="text-red-500">*</span>}
-      </label>
       {children}
     </div>
   );

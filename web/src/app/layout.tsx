@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN" data-theme="dark">
+    <html lang="zh-CN" data-theme="light">
       <head>
         <script dangerouslySetInnerHTML={{ __html: `
           (function() {
@@ -27,12 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="text-brand-500">Skill</span>Hub
             </Link>
             <nav className="flex items-center gap-6 text-sm text-[var(--muted)]">
+              <Link href="/" className="hover:text-[var(--foreground)] transition-colors">首页</Link>
               <Link href="/guide" className="hover:text-[var(--foreground)] transition-colors">使用指南</Link>
-              <Link href="/" className="hover:text-[var(--foreground)] transition-colors">浏览插件</Link>
               <Link href="/contribute" className="hover:text-[var(--foreground)] transition-colors">贡献指南</Link>
-              <Link href="/admin" className="flex items-center gap-1 hover:text-[var(--foreground)] transition-colors" title="管理后台">
-                <Wrench className="w-3.5 h-3.5" />
-              </Link>
+              <Link href="/publish" className="hover:text-[var(--foreground)] transition-colors">发布</Link>
               <ThemeToggle />
             </nav>
           </div>

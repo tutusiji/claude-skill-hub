@@ -8,7 +8,7 @@ import {
   Package, TrendingUp, Activity, EyeOff, Eye, ArrowLeft, RefreshCw,
   ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ChevronDown, ChevronUp,
   Trash2, Rocket, Pencil, X, Zap, Settings, Plus, Save, RotateCcw,
-  AlertOctagon, Bot, Plug,
+  AlertOctagon, ExternalLink, Terminal, Bot, Plug,
 } from 'lucide-react';
 import type { Plugin } from '@/lib/types';
 import type { LlmConfig, LlmProvider } from '@/lib/llm-config';
@@ -45,7 +45,9 @@ interface ValidationResult {
 
 interface StatsData {
   stats: Record<string, number>;
+  installs: Record<string, number>;
   topDownloads: Array<{ name: string; count: number }>;
+  topInstalls: Array<{ name: string; count: number }>;
   statusMap: Record<string, boolean>;
   recentDownloads: Array<{ pluginName: string; timestamp: string }>;
 }
@@ -827,7 +829,7 @@ function SubmissionsTab({
         const vr = validationResults[sub.id];
         const isValidating = validatingIds.has(sub.id);
         const isExpanded = expandedValidations.has(sub.id);
-        const canPublish = vr?.passed && sub.status !== 'published';
+        const canPublish = sub.status !== 'published' && sub.status !== 'rejected';
         const aiR = aiReviewResults[sub.id];
         const isAiReviewing = aiReviewingIds.has(sub.id);
         const isAiExpanded = expandedAiReviews.has(sub.id);
@@ -903,7 +905,7 @@ function SubmissionsTab({
                     {isExpanded && (
                       <ul className="space-y-0.5">
                         {vr.warnings.map((warn, i) => (
-                          <li key={i} className="text-xs text-yellow-400/80 flex items-start gap-1.5">
+                          <li key={i} className="text-xs text-yellow-500 flex items-start gap-1.5">
                             <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" />
                             <span>{warn}</span>
                           </li>
@@ -1077,6 +1079,7 @@ function PluginsTab({
 }) {
   const statusMap = statsData?.statusMap || {};
   const stats = statsData?.stats || {};
+  const installs = statsData?.installs || {};
 
   // 合并静态插件和已发布插件（去重）
   const staticNames = new Set(plugins.map(p => p.name));
@@ -1107,6 +1110,7 @@ function PluginsTab({
                 <span>{CATEGORY_LABELS[plugin.category] || plugin.category}</span>
                 <span>{(plugin.skills?.length || 0)} 技能</span>
                 <span>{downloads} 次下载</span>
+                <span>{(installs[plugin.name] || 0)} 次复制安装命令</span>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -1148,16 +1152,21 @@ function PluginsTab({
 function StatsTab({ statsData }: { statsData: StatsData | null }) {
   if (!statsData) return null;
 
-  const { topDownloads = [], recentDownloads = [] } = statsData;
+  const { topDownloads = [], topInstalls = [], recentDownloads = [] } = statsData;
   const totalDownloads = topDownloads.reduce((sum, p) => sum + p.count, 0);
+  const totalInstalls = topInstalls.reduce((sum, p) => sum + p.count, 0);
 
   return (
     <div className="space-y-6">
       {/* Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="card p-4">
-          <div className="text-xs text-[var(--muted)] mb-1">总下载次数</div>
+          <div className="text-xs text-[var(--muted)] mb-1">下载量（ZIP）</div>
           <div className="text-2xl font-bold">{totalDownloads}</div>
+        </div>
+        <div className="card p-4">
+          <div className="text-xs text-[var(--muted)] mb-1">复制安装命令次数</div>
+          <div className="text-2xl font-bold">{totalInstalls}</div>
         </div>
         <div className="card p-4">
           <div className="text-xs text-[var(--muted)] mb-1">已上架插件</div>
@@ -1175,13 +1184,38 @@ function StatsTab({ statsData }: { statsData: StatsData | null }) {
       <div>
         <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-brand-500" />
-          下载排行
+          下载排行（ZIP 包）
         </h3>
         <div className="card divide-y divide-[var(--border)]">
           {topDownloads.length === 0 ? (
             <div className="p-4 text-center text-xs text-[var(--muted)]">暂无下载数据</div>
           ) : (
             topDownloads.map((item, i) => (
+              <div key={item.name} className="flex items-center gap-3 p-3">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                  i < 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-[var(--background)] text-[var(--muted)]'
+                }`}>
+                  {i + 1}
+                </span>
+                <span className="text-sm flex-1 truncate">{item.name}</span>
+                <span className="text-xs text-[var(--muted)] font-mono">{item.count} 次</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Top Install Intents */}
+      <div>
+        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-brand-500" />
+          复制安装命令排行
+        </h3>
+        <div className="card divide-y divide-[var(--border)]">
+          {topInstalls.length === 0 ? (
+            <div className="p-4 text-center text-xs text-[var(--muted)]">暂无复制记录</div>
+          ) : (
+            topInstalls.map((item, i) => (
               <div key={item.name} className="flex items-center gap-3 p-3">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   i < 3 ? 'bg-amber-500/20 text-amber-500' : 'bg-[var(--background)] text-[var(--muted)]'

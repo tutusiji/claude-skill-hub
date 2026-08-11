@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Lock, User, Wrench } from 'lucide-react';
+import { getAppUrl } from '@/lib/config';
 
 export default function AdminLoginPage() {
+  const appUrl = getAppUrl();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -105,7 +107,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-xs text-[var(--muted)] mt-4">
-          仅限管理员访问 · 内网 10.9.43.61:7788/admin
+          仅限管理员访问{appUrl ? ` · ${appUrl}/admin` : ''}
         </p>
       </div>
     </main>

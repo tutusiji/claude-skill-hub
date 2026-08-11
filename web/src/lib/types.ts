@@ -15,7 +15,7 @@ export interface Plugin {
   source: string;
   version: string;
   category: string;
-  type?: 'plugin' | 'skills';
+  type?: 'plugin' | 'skills' | 'skill';
   keywords?: string[];
   author?: { name: string; email?: string };
   skills?: PluginSkill[];

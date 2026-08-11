@@ -61,7 +61,7 @@ function TreeNode({ node, depth }: { node: FileTreeNode; depth: number }) {
           {node.name}
         </span>
         {!isDir && (
-          <span className="text-[var(--muted)] text-[10px] tabular-nums shrink-0">
+          <span className="text-[var(--muted)] text-xs tabular-nums shrink-0">
             {formatSize(node.size)}
           </span>
         )}

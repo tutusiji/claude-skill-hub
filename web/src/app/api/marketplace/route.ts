@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getPublishedPlugins } from '@/lib/storage';
 import registry from '@/lib/registry.json';
 import type { Plugin } from '@/lib/types';
+import { getAppUrl, getMarketplaceName } from '@/lib/config';
 
 export const runtime = 'nodejs';
 
@@ -14,13 +15,12 @@ export async function GET() {
 
   // 构建 marketplace.json 格式
   const marketplace = {
-    name: 'skill-hub',
+    name: getMarketplaceName(),
     description: '内部 Claude Code 技能市场 — 浏览、搜索并安装内部技能和插件',
     owner: {
       name: 'Skill Hub',
     },
     plugins: allPlugins.map((p) => {
-      const isSkillPack = p.type === 'skills';
       return {
         name: p.name,
         description: p.description,
@@ -28,7 +28,7 @@ export async function GET() {
         version: p.version,
         source: {
           source: 'url',
-          url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://joox.cc:7504'}/api/plugins/${p.name}/download-zip`,
+          url: `${getAppUrl()}/api/plugins/${p.name}/download-zip`,
         },
       };
     }),

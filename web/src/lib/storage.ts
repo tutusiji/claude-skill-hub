@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, readdir
 import { join, isAbsolute, basename } from 'path';
 import { execSync } from 'child_process';
 import type { Plugin, PluginSkill, PluginCommand } from './types';
-import { findPluginRoot } from './validator';
+import { findPluginRoot, type PluginRootType } from './validator';
 
 // ─── Directory Setup ───────────────────────────────────────
 function resolveDir(envVar: string | undefined, fallback: string): string {
@@ -63,6 +63,8 @@ export function getPluginDir(pluginName: string): string | null {
 // ─── File Paths ────────────────────────────────────────────
 const SUBMISSIONS_FILE = join(DATA_DIR, 'submissions.json');
 const PLUGIN_STATS_FILE = join(DATA_DIR, 'plugin-stats.json');
+const PLUGIN_INSTALLS_FILE = join(DATA_DIR, 'plugin-installs.json');
+const PLUGIN_LIKES_FILE = join(DATA_DIR, 'plugin-likes.json');
 const PLUGIN_STATUS_FILE = join(DATA_DIR, 'plugin-status.json');
 const DOWNLOAD_LOG_FILE = join(DATA_DIR, 'download-log.json');
 const PUBLISHED_PLUGINS_FILE = join(DATA_DIR, 'published-plugins.json');
@@ -105,6 +107,8 @@ function initFile(filepath: string, defaultValue: unknown) {
 
 initFile(SUBMISSIONS_FILE, []);
 initFile(PLUGIN_STATS_FILE, {});
+initFile(PLUGIN_INSTALLS_FILE, {});
+initFile(PLUGIN_LIKES_FILE, {});
 initFile(PLUGIN_STATUS_FILE, {});
 initFile(DOWNLOAD_LOG_FILE, []);
 initFile(PUBLISHED_PLUGINS_FILE, []);
@@ -116,6 +120,16 @@ function readJSON<T>(filepath: string): T {
 
 function writeJSON(filepath: string, data: unknown) {
   writeFileSync(filepath, JSON.stringify(data, null, 2));
+}
+
+// 从目录名或上传文件名推导干净的包名：
+// 去掉归档扩展名、尾部 "-main"/"-master"、尾部版本号（如 -1.0.5 / .1.0.5）
+function derivePackageName(source: string): string {
+  return source
+    .replace(/\.(zip|tar\.gz|tgz)$/i, '')
+    .replace(/-(main|master)$/, '')
+    .replace(/[-.]\d+\.\d+\.\d+$/, '')
+    .trim();
 }
 
 function parseFrontmatter(content: string): Record<string, string> {
@@ -198,6 +212,9 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
   const tmpDir = join(DATA_DIR, 'tmp', id);
   mkdirSync(tmpDir, { recursive: true });
 
+  // 包装目录（单 skill 平铺包）在 tmpDir 之外，用于 finally 清理
+  let wrappedDir: string | null = null;
+
   try {
     // Extract archive
     const lower = fullFilepath.toLowerCase();
@@ -209,18 +226,20 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
       return { success: false, error: '不支持的文件格式' };
     }
 
-    // Find plugin root — 递归搜索，支持嵌套 ZIP 和纯 skill 包
+    // Find plugin root — 递归搜索，支持嵌套 ZIP、纯 skill 集合包、单 skill 平铺包
     const pluginRoot = findPluginRoot(tmpDir);
-    if (!pluginRoot) return { success: false, error: '未找到有效的插件结构（缺少 .claude-plugin/plugin.json 或 skills/ 目录）' };
+    if (!pluginRoot) return { success: false, error: '未找到有效的插件/技能结构（需要 .claude-plugin/plugin.json 或 skills/ 目录或 SKILL.md）' };
 
     // Read manifest — 从 plugin.json 或自动生成
     let manifest: Record<string, unknown>;
     if (pluginRoot.type === 'plugin') {
       manifest = JSON.parse(readFileSync(join(pluginRoot.path, '.claude-plugin', 'plugin.json'), 'utf-8'));
-    } else {
-      // 纯 skill 包：从目录名自动生成元数据
-      const dirName = basename(pluginRoot.path);
-      const cleanName = dirName.replace(/-(main|master)$/, '').replace(/[-.]\d+\.\d+\.\d+$/, '');
+    } else if (pluginRoot.type === 'skills') {
+      // 纯 skill 集合包：从目录名自动生成元数据。
+      // 若 skills/ 直接位于 zip 根目录（pluginRoot.path === tmpDir），dirname 是
+      // submission id，无意义——回退到上传文件名推导包名。
+      const nameSource = pluginRoot.path === tmpDir ? sub.filename : basename(pluginRoot.path);
+      const cleanName = derivePackageName(nameSource);
       let description = `Skill collection from ${cleanName}`;
       const readmePath = join(pluginRoot.path, 'README.md');
       if (existsSync(readmePath)) {
@@ -228,17 +247,54 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
         const lines = readme.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('!'));
         if (lines.length > 0) description = lines[0].trim().slice(0, 200);
       }
-      manifest = { name: cleanName, version: '1.0.0', description };
+      manifest = { name: cleanName || 'skill-collection', version: '1.0.0', description };
+    } else {
+      // 单 skill 平铺包：优先从 SKILL.md frontmatter 取 name/version/description。
+      // 平铺包解压后根目录往往是 tmp 目录，dirname 是其 basename（submission id），
+      // 无意义——frontmatter 缺失时同样回退到上传文件名推导包名。
+      const nameSource = pluginRoot.path === tmpDir ? sub.filename : basename(pluginRoot.path);
+      const cleanName = derivePackageName(nameSource);
+      const skillMdPath = join(pluginRoot.path, 'SKILL.md');
+      const fm = existsSync(skillMdPath) ? parseFrontmatter(readFileSync(skillMdPath, 'utf-8')) : {};
+      manifest = {
+        name: fm.name || cleanName || 'skill',
+        version: fm.version || '1.0.0',
+        description: fm.description || `Skill: ${cleanName}`,
+      };
     }
     const pluginName = manifest.name as string;
     if (!pluginName) return { success: false, error: '插件缺少 name 字段' };
+
+    // 对单 skill 平铺包进行结构包装，使其符合 plugin 标准（便于 marketplace 分发）
+    let sourceDir = pluginRoot.path;
+    if (pluginRoot.type === 'skill') {
+      // 包装目录必须建在 tmpDir 之外（同级）：平铺包解压后 SKILL.md 直接在
+      // tmpDir 根下，pluginRoot.path === tmpDir，若把 wrappedDir 建在 tmpDir 内，
+      // cp 会把源目录复制进自身子目录，报 "cannot copy directory into itself"。
+      wrappedDir = join(DATA_DIR, 'tmp', `wrapped-${pluginName}`);
+      mkdirSync(wrappedDir, { recursive: true });
+      // 生成 .claude-plugin/plugin.json
+      const claudePluginDir = join(wrappedDir, '.claude-plugin');
+      mkdirSync(claudePluginDir, { recursive: true });
+      writeFileSync(join(claudePluginDir, 'plugin.json'), JSON.stringify({
+        name: pluginName,
+        version: manifest.version || '1.0.0',
+        description: manifest.description || '',
+        category: sub.category || 'developer-tools',
+      }, null, 2));
+      // 创建 skills/<pluginName>/ 并将原始目录所有内容复制进去
+      const destSkillDir = join(wrappedDir, 'skills', pluginName);
+      mkdirSync(destSkillDir, { recursive: true });
+      execSync(`cp -r "${pluginRoot.path}/." "${destSkillDir}/"`);
+      sourceDir = wrappedDir;
+    }
 
     // Move to published plugins directory
     const destDir = join(PUBLISHED_PLUGINS_DIR, pluginName);
     if (existsSync(destDir)) {
       execSync(`rm -rf "${destDir}"`);
     }
-    execSync(`mv "${pluginRoot.path}" "${destDir}"`);
+    execSync(`mv "${sourceDir}" "${destDir}"`);
 
     // Read skills
     const skills: PluginSkill[] = [];
@@ -311,6 +367,10 @@ export function publishSubmission(id: string): { success: boolean; plugin?: Publ
     return { success: false, error: e instanceof Error ? e.message : String(e) };
   } finally {
     try { execSync(`rm -rf "${tmpDir}" 2>/dev/null || true`); } catch { /* ignore */ }
+    // 包装目录在 tmpDir 之外（同级），失败时一并清理
+    if (wrappedDir) {
+      try { execSync(`rm -rf "${wrappedDir}" 2>/dev/null || true`); } catch { /* ignore */ }
+    }
   }
 }
 
@@ -332,6 +392,43 @@ export function incrementDownload(pluginName: string) {
   log.push({ pluginName, timestamp: new Date().toISOString() });
   if (log.length > 200) log.splice(0, log.length - 200);
   writeJSON(DOWNLOAD_LOG_FILE, log);
+}
+
+// ─── Plugin Copy-Command Counts（复制安装命令次数）──────────
+// 与下载（ZIP）分开统计：`claude plugin install` 直接从 marketplace git
+// 仓库拉取，不经过 web 服务器，无法统计真实安装。这里只记录用户点击
+// "复制安装命令"按钮的次数，作为安装意向的近似指标（非真实安装数）。
+export function getPluginInstalls(): Record<string, number> {
+  return readJSON<Record<string, number>>(PLUGIN_INSTALLS_FILE);
+}
+
+export function getPluginInstallCount(pluginName: string): number {
+  const installs = getPluginInstalls();
+  return installs[pluginName] || 0;
+}
+
+export function incrementInstall(pluginName: string): number {
+  const installs = getPluginInstalls();
+  installs[pluginName] = (installs[pluginName] || 0) + 1;
+  writeJSON(PLUGIN_INSTALLS_FILE, installs);
+  return installs[pluginName];
+}
+
+// ─── Plugin Likes ──────────────────────────────────────────
+export function getPluginLikes(): Record<string, number> {
+  return readJSON<Record<string, number>>(PLUGIN_LIKES_FILE);
+}
+
+export function getPluginLikeCount(pluginName: string): number {
+  const likes = getPluginLikes();
+  return likes[pluginName] || 0;
+}
+
+export function incrementLike(pluginName: string): number {
+  const likes = getPluginLikes();
+  likes[pluginName] = (likes[pluginName] || 0) + 1;
+  writeJSON(PLUGIN_LIKES_FILE, likes);
+  return likes[pluginName];
 }
 
 // ─── Plugin Status (publish/unpublish) ─────────────────────

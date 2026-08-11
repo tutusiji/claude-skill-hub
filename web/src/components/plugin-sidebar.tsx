@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Download, Link2, Check, Loader2, HardDrive, Tag, FolderTree, Layers } from 'lucide-react';
+import { Download, Link2, Check, Loader2, HardDrive, Tag, FolderTree, Layers, Terminal } from 'lucide-react';
 import { FileTree } from './file-tree';
+import { LikeButton } from './like-button';
 
 interface FileTreeNode {
   name: string;
@@ -17,11 +18,13 @@ interface PluginSidebarProps {
   category: string;
   license?: string;
   downloadCount: number;
+  installCount: number;
   skillsCount: number;
+  likeCount: number;
 }
 
 export function PluginSidebar({
-  pluginName, version, category, license, downloadCount, skillsCount,
+  pluginName, version, category, license, downloadCount, installCount, skillsCount, likeCount,
 }: PluginSidebarProps) {
   const [tree, setTree] = useState<FileTreeNode[] | null>(null);
   const [loadingTree, setLoadingTree] = useState(true);
@@ -124,10 +127,18 @@ export function PluginSidebar({
               {downloadCount}
             </span>
           </div>
+          <div className="flex justify-between">
+            <span className="text-[var(--muted)]">复制安装命令</span>
+            <span className="flex items-center gap-1">
+              <Terminal className="w-3 h-3" />
+              {installCount}
+            </span>
+          </div>
         </div>
 
         {/* 操作按钮 */}
         <div className="space-y-2">
+          <LikeButton pluginName={pluginName} initialCount={likeCount} />
           <button
             onClick={handleDownloadZip}
             disabled={downloading}

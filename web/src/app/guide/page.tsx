@@ -1,8 +1,9 @@
 import { BookOpen, Download, Terminal, Zap, Layers, GitBranch, FileCode, Workflow, Cpu } from 'lucide-react';
 import Link from 'next/link';
 import { TocNav } from '@/components/toc-nav';
+import { getMarketplaceUrl } from '@/lib/config';
 
-const MARKETPLACE_URL = process.env.NEXT_PUBLIC_MARKETPLACE_URL || 'http://10.9.43.61:7789/skill-hub.git';
+const MARKETPLACE_URL = getMarketplaceUrl();
 
 const SECTIONS = [
   { id: 'tools', title: '支持的工具' },
